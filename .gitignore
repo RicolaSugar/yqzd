@@ -1,14 +1,49 @@
-# C++ objects and libs
+.vscode/
+.cache/
+build*/
+
+/build
+/lbuild
+
+*.user
+
+# Compiled Object files
 *.slo
 *.lo
 *.o
-*.a
-*.la
-*.lai
+
+# Compiled Dynamic libraries
 *.so
-*.so.*
-*.dll
 *.dylib
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+
+# nix
+.direnv/
+result
+result-*
+
+# clangd
+compile_commands.json
+
+# executeable files
+*.qm
+
+# cmake
+CMakeLists.txt.user
+
+#ccls
+.ccls-cache
+
+# qtcreator
+*.autosave
+
+.qmlls.ini
+
+/*.TMP
 
 # Qt-es
 object_script.*.Release
@@ -32,6 +67,7 @@ Makefile*
 *.qm
 *.prl
 
+
 # Qt unit tests
 target_wrapper.*
 
@@ -52,3 +88,6 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+
+/.cache
+
