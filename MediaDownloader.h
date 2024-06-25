@@ -48,6 +48,9 @@ Q_SIGNALS:
     void dlError(const QString &errorMsg);
 
 private:
+    void processDownload();
+
+private:
     QNetworkAccessManager       *m_networkMgr = nullptr;
     QList<MediaObject>          m_dlList;
     QMap<QString, MediaObject>  m_workingMap;

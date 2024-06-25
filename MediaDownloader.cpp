@@ -7,6 +7,8 @@
 #include <QDir>
 #include <QStringView>
 #include <QString>
+#include <QCryptographicHash>
+#include <QApplication>
 
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -17,13 +19,13 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 
-const static int DL_MAX_CNT = 10;
+const static int DL_MAX_CNT = 1;
 
 class MediaObjectPriv : public QSharedData
 {
 public:
     MediaObjectPriv()
-        : id(-1)
+        : id(-2)
     {
 
     }
@@ -277,18 +279,88 @@ void MediaDownloader::download(const QString &dataFile, const QString &outPath)
                  <<"]";
     }
 
-    if (!m_dlList.isEmpty()) {
+    processDownload();
+
+}
+
+static bool flag = true;
+static int  dl_cnt = 0;
+void MediaDownloader::processDownload()
+{
+    while (!m_dlList.isEmpty()) {
+
+        if (m_workingMap.size() == DL_MAX_CNT) {
+            qApp->processEvents();
+            continue;
+        }
+
         auto obj = m_dlList.takeFirst();
+
+        qDebug()<<"get obj ID ["<<obj.id()
+                 <<"], path ["<<obj.path()
+                 <<"], url ["<<obj.uri()
+                 <<"], exist "<<m_dlList.size();
+
         m_workingMap.insert(obj.uri(), obj);
+
+
+        for(const auto &it : m_workingMap) {
+            qDebug()<<"map obj ID ["<<it.id()
+                     <<"], path ["<<it.path()
+                     <<"], url ["<<it.uri()
+                     <<"]";
+        }
+
         auto reply = m_networkMgr->get(QNetworkRequest(obj.uri()));
 
+        connect(reply, &QNetworkReply::finished,
+                this, [=, &reply]() {
+                    dl_cnt++;
+                    auto obj = m_workingMap.take(reply->url().toString());
+
+                    qDebug()<<"reply ID ["<<obj.id()
+                             <<"], path ["<<obj.path()
+                             <<"], url ["<<obj.uri()
+                             <<"], reply url string ["<<reply->url().toString()
+                             <<"], cnt "<<dl_cnt;
+
+                    if (reply->error() != QNetworkReply::NoError) {
+                        qDebug()<<Q_FUNC_INFO<<"download error "<<reply->errorString();
+                        reply->deleteLater();
+
+                        m_dlList.append(obj);
+                        if (!flag) {
+                            processDownload();
+                        }
+                        return;
+                    }
+
+                    QDir dir(QString("%1/%2").arg(obj.path()).arg(obj.id()));
+                    if (!dir.exists() && !dir.mkpath(QString("%1/%2").arg(obj.path()).arg(obj.id()))) {
+                        qDebug()<<Q_FUNC_INFO<<"mk dir error";
+                        reply->deleteLater();
+                        return;
+                    }
+
+
+                    auto fName = QString("%1/%2/%3")
+                                     .arg(obj.path())
+                                     .arg(obj.id())
+                                     .arg(obj.uri().toUtf8().toBase64());
+
+                    qDebug()<<Q_FUNC_INFO<<"save to "<<fName;
+
+
+                    QFile f(fName);
+                    if (!f.open(QIODevice::WriteOnly)) {
+                        qDebug()<<Q_FUNC_INFO<<"open error";
+                        reply->deleteLater();
+                        return;
+                    }
+
+                });
     }
-
-
-
-
-
-
+    flag = !flag;
 }
 
 
