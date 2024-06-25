@@ -13,6 +13,10 @@
 #include <QJsonObject>
 #include <QJsonValue>
 
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+
 const static int DL_MAX_CNT = 10;
 
 class MediaObjectPriv : public QSharedData
@@ -136,7 +140,6 @@ void MediaDownloader::download(const QString &dataFile, const QString &outPath)
         Q_EMIT dlError(QLatin1StringView("Error to create path [%1]!").arg(dataFile));
         return;
     }
-    m_outpath = outPath;
 
     QFile file(dataFile);
     if (!file.open(QIODevice::ReadOnly)) {
@@ -146,7 +149,7 @@ void MediaDownloader::download(const QString &dataFile, const QString &outPath)
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &error);
     if (error.error != QJsonParseError::NoError) {
-        Q_EMIT dlError(QLatin1StringView("parse json error at offset [%1]!").arg(error.offset));
+        Q_EMIT dlError(QLatin1StringView("parse json error at offset [%1]!").arg(QString::number(error.offset)));
         return;
     }
 
@@ -194,13 +197,92 @@ void MediaDownloader::download(const QString &dataFile, const QString &outPath)
 
     qDebug()<<Q_FUNC_INFO<<">>>>>>> found  pages, number: "<<pages.size();
 
+    for (const auto &page : pages) {
+        auto obj = page.toObject();
+        if (obj.isEmpty()) {
+            qDebug()<<Q_FUNC_INFO<<"Ingore invalid page object "<<page;
+            continue;
+        }
+        const int id = obj.value("ID").toInt(-1);
+        if (id == -1) {
+            qDebug()<<Q_FUNC_INFO<<"Ignore as invalid id for "<<obj;
+            continue;
+        }
+        // Element is an object
+        if (auto Element = obj.value("Element").toObject(); !Element.isEmpty()) {
+            CHK_AND_APPEND(Element, "Logo", id);
 
+            if (auto Media = Element.value("Media").toObject(); !Media.isEmpty()) {
+                CHK_AND_APPEND(Media, "URL", id);
+            }
+        }
+        if (auto Property = obj.value("Property").toObject(); !Property.isEmpty()) {
+            if (auto Background = Property.value("Background").toObject(); !Background.isEmpty()) {
+                CHK_AND_APPEND(Background, "ImageUrl", id);
+            }
+        }
+        //ElementS is an array
+        if (auto Elements = obj.value("Elements").toArray(); !Elements.isEmpty()) {
+            for (const auto &ele : Elements) {
+                auto eleObj = ele.toObject();
+                if (eleObj.isEmpty()) {
+                    qDebug()<<Q_FUNC_INFO<<"Ingore as current object in Elements is not object: "<<ele;
+                    continue;
+                }
+                if (auto Body = eleObj.value("Body").toObject(); !Body.isEmpty()) {
+                    //media in body object => for image type
+                    if (auto Media = Body.value("Media").toObject(); !Media.isEmpty()) {
+                        //other Elements in Meida
+                        if (auto MediaElements = Media.value("Elements").toArray(); !MediaElements.isEmpty()) {
+                            for (const auto &md : MediaElements) {
+                                auto mdObj = md.toObject();
+                                if(mdObj.isEmpty()) {
+                                    qDebug()<<Q_FUNC_INFO<<"Ignore current Media{Elements:[]} object "<<mdObj;
+                                    continue;
+                                }
+                                CHK_AND_APPEND(mdObj, "URL", id);
+                            }
+                        }
+                    }
+                    //Video in body object => for video and QR code
+                    if (auto Video = Body.value("Video").toObject(); !Video.isEmpty()) {
+                        if (auto Image = Video.value("Image").toObject(); !Image.isEmpty()) {
+                            CHK_AND_APPEND(Image, "URL", id);
+                            CHK_AND_APPEND(Image, "VideoUri", id);
+                        }
+                        //NOTE ignore QRcode url as same as VideoUri
+                    }
+                    if (auto Template = Body.value("Template").toObject(); !Template.isEmpty()) {
+                        if (auto Images = Template.value("Images").toArray(); !Images.isEmpty()) {
+                            for (const auto &img : Images) {
+                                auto imgObj = img.toObject();
+                                if (imgObj.isEmpty()) {
+                                    qDebug()<<Q_FUNC_INFO<<"Ignore current Template{Images:[]} object "<<imgObj;
+                                    continue;
+                                }
+                                CHK_AND_APPEND(imgObj, "URL", id);
+                            }
+                        }
+                    }
+                }
+            }
+        } //end ElementS is an array
+    }
 
+    qDebug()<<Q_FUNC_INFO<<">>>>>>> final download data size : "<<m_dlList.size();
+    for (const auto &o : m_dlList) {
+        qDebug()<<"ID ["<<o.id()
+                 <<"], path ["<<o.path()
+                 <<"], url ["<<o.uri()
+                 <<"]";
+    }
 
+    if (!m_dlList.isEmpty()) {
+        auto obj = m_dlList.takeFirst();
+        m_workingMap.insert(obj.uri(), obj);
+        auto reply = m_networkMgr->get(QNetworkRequest(obj.uri()));
 
-
-
-
+    }
 
 
 

@@ -48,10 +48,12 @@ Q_SIGNALS:
     void dlError(const QString &errorMsg);
 
 private:
-    QNetworkAccessManager   *m_networkMgr = nullptr;
-    QList<MediaObject>      m_dlList;
-    int                     m_dlCnt;
-    QString                 m_outpath;
+    QNetworkAccessManager       *m_networkMgr = nullptr;
+    QList<MediaObject>          m_dlList;
+    QMap<QString, MediaObject>  m_workingMap;
+    int                         m_dlCnt;
+
+
 
 
 };
