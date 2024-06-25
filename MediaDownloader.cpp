@@ -13,6 +13,8 @@
 #include <QJsonObject>
 #include <QJsonValue>
 
+const static int DL_MAX_CNT = 10;
+
 class MediaObjectPriv : public QSharedData
 {
 public:
@@ -109,6 +111,7 @@ void MediaObject::setPath(const QString &path)
 MediaDownloader::MediaDownloader(QObject *parent)
     : QObject(parent)
     , m_networkMgr(new QNetworkAccessManager(this))
+    , m_dlCnt(0)
 {
 
 }
@@ -124,27 +127,32 @@ void MediaDownloader::download(const QString &dataFile, const QString &outPath)
         Q_EMIT dlError(QString("Data file [%1] not exist!").arg(dataFile));
         return;
     }
-    QDir dir(outPath);
-    if (!dir.exists() && !dir.mkpath(outPath)) {
-        Q_EMIT dlError(QString("Error to create path [%1]!").arg(dataFile));
+    if (outPath.isEmpty()) {
+        Q_EMIT dlError(QLatin1StringView("Empty out path!"));
         return;
     }
+    QDir dir(outPath);
+    if (!dir.exists() && !dir.mkpath(outPath)) {
+        Q_EMIT dlError(QLatin1StringView("Error to create path [%1]!").arg(dataFile));
+        return;
+    }
+    m_outpath = outPath;
 
     QFile file(dataFile);
     if (!file.open(QIODevice::ReadOnly)) {
-        Q_EMIT dlError(QString("Can't open as readonly for [%1]!").arg(dataFile));
+        Q_EMIT dlError(QLatin1StringView("Can't open as readonly for [%1]!").arg(dataFile));
         return;
     }
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &error);
     if (error.error != QJsonParseError::NoError) {
-        Q_EMIT dlError(QString("parse json error at offset [%1]!").arg(error.offset));
+        Q_EMIT dlError(QLatin1StringView("parse json error at offset [%1]!").arg(error.offset));
         return;
     }
 
     auto root = doc.object();
     auto data = root.value("data").toObject();
-    if (!data.isEmpty()) {
+    if (data.isEmpty()) {
         Q_EMIT dlError((QLatin1StringView("Parse 'data' node error!")));
         return;
     }
@@ -183,6 +191,8 @@ void MediaDownloader::download(const QString &dataFile, const QString &outPath)
         Q_EMIT dlError((QLatin1StringView("No pages found!!")));
         return;
     }
+
+    qDebug()<<Q_FUNC_INFO<<">>>>>>> found  pages, number: "<<pages.size();
 
 
 
