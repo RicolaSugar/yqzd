@@ -16,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_dlBtn(new QPushButton)
     , m_dataSelLabel(new QLabel)
     , m_outpathSelLabel(new QLabel)
+    , m_infoLabel(new QLabel)
     , m_mediaDL(new MediaDownloader(this))
 {
 
@@ -33,6 +34,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_dlBtn->setText("download media");
     vb->addWidget(m_dlBtn);
+
+    vb->addWidget(m_infoLabel);
 
     centralWidget->setLayout(vb);
     this->setCentralWidget(centralWidget);
@@ -71,7 +74,10 @@ MainWindow::MainWindow(QWidget *parent)
         QMessageBox::warning(nullptr, "Error", msg);
     });
 
-
+    connect(m_mediaDL, &MediaDownloader::downloadState,
+            this, [=](const QString &msg) {
+        m_infoLabel->setText(msg);
+    });
 
 }
 

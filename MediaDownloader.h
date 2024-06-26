@@ -46,19 +46,16 @@ public:
 
 Q_SIGNALS:
     void dlError(const QString &errorMsg);
+    void downloadState(const QString &msg);
 
 private:
     void processDownload();
 
 private:
     QNetworkAccessManager       *m_networkMgr = nullptr;
+    QList<QNetworkReply*>       m_replyList;
     QList<MediaObject>          m_dlList;
     QMap<QString, MediaObject>  m_workingMap;
-    int                         m_dlCnt;
-
-
-
-
 };
 
 #endif // MEDIADOWNLOADER_H

@@ -21,6 +21,7 @@ private:
 
     QLabel      *m_dataSelLabel     = nullptr;
     QLabel      *m_outpathSelLabel  = nullptr;
+    QLabel      *m_infoLabel        = nullptr;
 
     MediaDownloader *m_mediaDL      = nullptr;
 

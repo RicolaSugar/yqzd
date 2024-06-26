@@ -19,7 +19,7 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 
-const static int DL_MAX_CNT = 1;
+const static int DL_MAX_CNT = 5;
 
 class MediaObjectPriv : public QSharedData
 {
@@ -117,14 +117,21 @@ void MediaObject::setPath(const QString &path)
 MediaDownloader::MediaDownloader(QObject *parent)
     : QObject(parent)
     , m_networkMgr(new QNetworkAccessManager(this))
-    , m_dlCnt(0)
 {
 
 }
-
 MediaDownloader::~MediaDownloader()
 {
-
+    if (!m_replyList.isEmpty()) {
+        for (const auto it : m_replyList) {
+            if (it->isRunning()) {
+                it->abort();
+            }
+            it->deleteLater();
+        }
+        m_replyList.clear();
+    }
+    m_networkMgr->deleteLater();;
 }
 
 void MediaDownloader::download(const QString &dataFile, const QString &outPath)
@@ -281,48 +288,34 @@ void MediaDownloader::download(const QString &dataFile, const QString &outPath)
 
     processDownload();
 
+    Q_EMIT downloadState(QLatin1StringView("Current download finish"));
 }
 
 static bool flag = true;
-static int  dl_cnt = 0;
 void MediaDownloader::processDownload()
 {
     while (!m_dlList.isEmpty()) {
-
         if (m_workingMap.size() == DL_MAX_CNT) {
             qApp->processEvents();
             continue;
         }
 
         auto obj = m_dlList.takeFirst();
-
-        qDebug()<<"get obj ID ["<<obj.id()
-                 <<"], path ["<<obj.path()
-                 <<"], url ["<<obj.uri()
-                 <<"], exist "<<m_dlList.size();
-
         m_workingMap.insert(obj.uri(), obj);
 
-
-        for(const auto &it : m_workingMap) {
-            qDebug()<<"map obj ID ["<<it.id()
-                     <<"], path ["<<it.path()
-                     <<"], url ["<<it.uri()
-                     <<"]";
-        }
-
         auto reply = m_networkMgr->get(QNetworkRequest(obj.uri()));
+        m_replyList.append(reply);
 
         connect(reply, &QNetworkReply::finished,
-                this, [=, &reply]() {
-                    dl_cnt++;
+                this, [=]() {
+                    m_replyList.removeOne(reply);
                     auto obj = m_workingMap.take(reply->url().toString());
 
                     qDebug()<<"reply ID ["<<obj.id()
                              <<"], path ["<<obj.path()
                              <<"], url ["<<obj.uri()
                              <<"], reply url string ["<<reply->url().toString()
-                             <<"], cnt "<<dl_cnt;
+                             <<"]";
 
                     if (reply->error() != QNetworkReply::NoError) {
                         qDebug()<<Q_FUNC_INFO<<"download error "<<reply->errorString();
@@ -330,6 +323,7 @@ void MediaDownloader::processDownload()
 
                         m_dlList.append(obj);
                         if (!flag) {
+                            Q_EMIT downloadState(QString("Re-stared failure obj %1").arg(obj.uri()));
                             processDownload();
                         }
                         return;
@@ -341,23 +335,30 @@ void MediaDownloader::processDownload()
                         reply->deleteLater();
                         return;
                     }
-
-
-                    auto fName = QString("%1/%2/%3")
+                    auto tag = [](const QString &uri) -> QString {
+                        if (int idx = uri.lastIndexOf("."); idx >=0) {
+                            return uri.sliced(idx+1);
+                        }
+                        return QString();
+                    };
+                    auto fName = QString("%1/%2/%3.%4")
                                      .arg(obj.path())
                                      .arg(obj.id())
-                                     .arg(obj.uri().toUtf8().toBase64());
+                                     .arg(obj.uri().toUtf8().toBase64())
+                                     .arg(tag(obj.uri()));
 
                     qDebug()<<Q_FUNC_INFO<<"save to "<<fName;
-
 
                     QFile f(fName);
                     if (!f.open(QIODevice::WriteOnly)) {
                         qDebug()<<Q_FUNC_INFO<<"open error";
+                        f.close();
                         reply->deleteLater();
                         return;
                     }
-
+                    f.write(reply->readAll());
+                    f.flush();
+                    f.close();
                 });
     }
     flag = !flag;
