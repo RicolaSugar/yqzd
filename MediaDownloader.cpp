@@ -220,10 +220,27 @@ void MediaDownloader::download(const QString &dataFile, const QString &outPath)
         // Element is an object
         if (auto Element = obj.value("Element").toObject(); !Element.isEmpty()) {
             CHK_AND_APPEND(Element, "Logo", id);
-
+            CHK_AND_APPEND(Element, "OrginURL", id);
             if (auto Media = Element.value("Media").toObject(); !Media.isEmpty()) {
                 CHK_AND_APPEND(Media, "URL", id);
             }
+            if (auto GraduationAudios = Element.value("GraduationAudios").toArray(); !GraduationAudios.isEmpty()) {
+                for (auto ga : GraduationAudios) {
+                    auto gaobj = ga.toObject();
+                    if (gaobj.isEmpty()) {
+                        qDebug()<<Q_FUNC_INFO<<"Ignore current Element:{GraduationAudios:[]} object: "<<ga;
+                        continue;
+                    }
+                    CHK_AND_APPEND(gaobj, "AvatarURL", id);
+                    CHK_AND_APPEND(gaobj, "OriginAudioURL", id);
+                }
+            }
+            if (auto Image = Element.value("Image").toObject(); !Image.isEmpty()) {
+                CHK_AND_APPEND(Image, "URL", id);
+            }
+
+
+
         }
         if (auto Property = obj.value("Property").toObject(); !Property.isEmpty()) {
             if (auto Background = Property.value("Background").toObject(); !Background.isEmpty()) {
@@ -344,7 +361,8 @@ void MediaDownloader::processDownload()
                     auto fName = QString("%1/%2/%3.%4")
                                      .arg(obj.path())
                                      .arg(obj.id())
-                                     .arg(obj.uri().toUtf8().toBase64())
+                                     // .arg(obj.uri().toUtf8().toBase64())
+                                     .arg(QCryptographicHash::hash(obj.uri().toUtf8(), QCryptographicHash::Md5).toHex())
                                      .arg(tag(obj.uri()));
 
                     qDebug()<<Q_FUNC_INFO<<"save to "<<fName;
