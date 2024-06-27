@@ -78,6 +78,8 @@ MainWindow::MainWindow(QWidget *parent)
             this, [=] {
         auto w = new PreviewWidget;
         w->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose);
+        w->load(m_datafile, m_outpath);
+        w->drawPage(0);
         w->show();
     });
 
