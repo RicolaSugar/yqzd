@@ -18,6 +18,7 @@ private:
     QPushButton *m_dataSelectBtn    = nullptr;
     QPushButton *m_outpathSelectBtn = nullptr;
     QPushButton *m_dlBtn            = nullptr;
+    QPushButton *m_previewBtn       = nullptr;
 
     QLabel      *m_dataSelLabel     = nullptr;
     QLabel      *m_outpathSelLabel  = nullptr;

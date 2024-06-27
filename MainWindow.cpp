@@ -8,12 +8,14 @@
 #include <QMessageBox>
 
 #include "MediaDownloader.h"
+#include "PreviewWidget.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , m_dataSelectBtn(new QPushButton)
     , m_outpathSelectBtn(new QPushButton)
     , m_dlBtn(new QPushButton)
+    , m_previewBtn(new QPushButton)
     , m_dataSelLabel(new QLabel)
     , m_outpathSelLabel(new QLabel)
     , m_infoLabel(new QLabel)
@@ -36,6 +38,9 @@ MainWindow::MainWindow(QWidget *parent)
     vb->addWidget(m_dlBtn);
 
     vb->addWidget(m_infoLabel);
+
+    m_previewBtn->setText("Preview");
+    vb->addWidget(m_previewBtn);
 
     centralWidget->setLayout(vb);
     this->setCentralWidget(centralWidget);
@@ -69,6 +74,13 @@ MainWindow::MainWindow(QWidget *parent)
         m_mediaDL->download(m_datafile, m_outpath);
     });
 
+    connect(m_previewBtn, &QPushButton::clicked,
+            this, [=] {
+        auto w = new PreviewWidget;
+        w->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose);
+        w->show();
+    });
+
     connect(m_mediaDL, &MediaDownloader::dlError,
             this, [=](const QString &msg) {
         QMessageBox::warning(nullptr, "Error", msg);
@@ -81,4 +93,11 @@ MainWindow::MainWindow(QWidget *parent)
 
 }
 
-MainWindow::~MainWindow() {}
+MainWindow::~MainWindow()
+{
+
+}
+
+
+
+
