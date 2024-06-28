@@ -1,6 +1,7 @@
 #include "MainWindow.h"
 
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QPushButton>
 #include <QMessageBox>
 #include <QFileDialog>
@@ -9,6 +10,8 @@
 
 #include "MediaDownloader.h"
 #include "PreviewWidget.h"
+
+#define DEV_DBG 1
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -19,30 +22,42 @@ MainWindow::MainWindow(QWidget *parent)
     , m_dataSelLabel(new QLabel)
     , m_outpathSelLabel(new QLabel)
     , m_infoLabel(new QLabel)
+    , m_previewWidget(new PreviewWidget)
     , m_mediaDL(new MediaDownloader(this))
+#ifdef DEV_DBG
+    , m_datafile("D:/yqzd-data/json/3-1.json")
+    , m_outpath("D:/yqzd-data/3-1")
+#endif
 {
+    // this->setFixedSize(800, 800);
+    m_previewWidget->setFixedSize(600, 800);
 
-    auto centralWidget = new QWidget;
     auto *vb = new QVBoxLayout;
     vb->setContentsMargins(10, 10, 10, 10);
 
     m_dataSelectBtn->setText("input file");
-    vb->addWidget(m_dataSelectBtn);
-    vb->addWidget(m_dataSelLabel);
+    vb->addWidget(m_dataSelectBtn, 0, Qt::AlignLeft);
+    vb->addWidget(m_dataSelLabel, 0, Qt::AlignLeft);
 
     m_outpathSelectBtn->setText("output path");
-    vb->addWidget(m_outpathSelectBtn);
-    vb->addWidget(m_outpathSelLabel);
+    vb->addWidget(m_outpathSelectBtn, 0, Qt::AlignLeft);
+    vb->addWidget(m_outpathSelLabel, 0, Qt::AlignLeft);
 
     m_dlBtn->setText("download media");
-    vb->addWidget(m_dlBtn);
+    vb->addWidget(m_dlBtn, 0, Qt::AlignLeft);
 
-    vb->addWidget(m_infoLabel);
+    vb->addWidget(m_infoLabel, 0, Qt::AlignLeft);
 
     m_previewBtn->setText("Preview");
-    vb->addWidget(m_previewBtn);
+    vb->addWidget(m_previewBtn, 0, Qt::AlignLeft);
+    vb->addStretch();
 
-    centralWidget->setLayout(vb);
+    QHBoxLayout *hb = new QHBoxLayout;
+    hb->addLayout(vb);
+    hb->addWidget(m_previewWidget);
+
+    auto centralWidget = new QWidget;
+    centralWidget->setLayout(hb);
     this->setCentralWidget(centralWidget);
 
     connect(m_dataSelectBtn, &QPushButton::clicked,
@@ -76,11 +91,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(m_previewBtn, &QPushButton::clicked,
             this, [=] {
-        auto w = new PreviewWidget;
-        w->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose);
-        w->load(m_datafile, m_outpath);
-        w->drawPage(0);
-        w->show();
+        // auto w = new PreviewWidget;
+        // w->setAttribute(Qt::WidgetAttribute::WA_DeleteOnClose);
+        // w->load(m_datafile, m_outpath);
+        // w->drawPage(0);
+        // w->show();
+        m_previewWidget->load(m_datafile, m_outpath);
+        m_previewWidget->drawPage(0);
     });
 
     connect(m_mediaDL, &MediaDownloader::dlError,

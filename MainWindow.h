@@ -5,6 +5,7 @@
 #include <QPushButton>
 #include <QLabel>
 
+class PreviewWidget;
 class MediaDownloader;
 class MainWindow : public QMainWindow
 {
@@ -23,6 +24,8 @@ private:
     QLabel      *m_dataSelLabel     = nullptr;
     QLabel      *m_outpathSelLabel  = nullptr;
     QLabel      *m_infoLabel        = nullptr;
+
+    PreviewWidget *m_previewWidget  = nullptr;
 
     MediaDownloader *m_mediaDL      = nullptr;
 

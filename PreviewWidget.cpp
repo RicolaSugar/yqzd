@@ -9,9 +9,11 @@
 #include <QString>
 #include <QCryptographicHash>
 #include <QApplication>
+#include <QtNumeric>
 
 #include <QPainter>
 #include <QImage>
+#include <QFontMetrics>
 
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -105,6 +107,14 @@ void PreviewWidget::drawPage(int pgNum)
     m_curID = root.value("ID").toInt(-1);
     drawBackground(root);
 
+    if (auto ele = root.value("Element").toObject(); !ele.isEmpty()) {
+        drawElement(ele);
+    }
+
+
+
+    this->update();
+
 }
 
 void PreviewWidget::paintEvent(QPaintEvent *event)
@@ -116,7 +126,9 @@ void PreviewWidget::paintEvent(QPaintEvent *event)
 
     QPainter p;
     p.begin(this);
-    p.drawImage(this->rect().topLeft(), *m_sceneImg);
+    p.drawImage(this->rect().topLeft(), m_sceneImg->scaled(this->rect().size(),
+                                                           Qt::KeepAspectRatio,
+                                                           Qt::SmoothTransformation));
     p.end();
 }
 
@@ -156,16 +168,128 @@ auto tag = [](const QString &uri) -> QString {
 void PreviewWidget::drawBackground(const QJsonObject &rootNode)
 {
     if (auto Property = rootNode.value("Property").toObject(); !Property.isEmpty()) {
+        int Height= Property.value("Height").toInt();
+        qDebug()<<Q_FUNC_INFO<<"Height "<<Height;
         if (auto Background = Property.value("Background").toObject(); !Background.isEmpty()) {
             auto uri = Background.value("ImageUrl").toString();
             auto fname = GET_FILE(uri);
             QImage img;
             if (img.load(fname)) {
-                m_scenePainter->drawImage(m_sceneImg->rect().topLeft(), img);
-                this->update();
+                //TODO fit size
+                img = img.scaledToHeight(Height, Qt::SmoothTransformation);
+                m_scenePainter->drawImage(m_sceneImg->rect().topLeft(),
+                                          img,
+                                          QRect(qMax(qAbs(img.width()-m_sceneImg->width()), 0),
+                                                qMax(qAbs(img.height()-m_sceneImg->height()), 0),
+                                                img.width(),
+                                                img.height()));
             }
         }
     }
+
+}
+
+void PreviewWidget::drawElement(const QJsonObject &node)
+{
+    if (node.isEmpty()) {
+        return;
+    }
+
+    if (const int TemplateType = node.value("TemplateType").toInt(); TemplateType == 1) {
+        drawTemplateElement(node);
+        return;
+    }
+}
+
+void PreviewWidget::drawTemplateElement(const QJsonObject &node)
+{
+    if (node.isEmpty()) {
+        return;
+    }
+    /*
+     * Meida image ypos 13% of height, xpos 14% of width
+     * Logo/text ypos 94.5% of height
+     */
+
+    //xpos for image and text
+    int xpos = m_sceneImg->width() *14/100;
+    int width = m_sceneImg->width() * (100 - 14*2)/100;
+
+    if (auto Media = node.value("Media").toObject(); !Media.isEmpty()) {
+        auto uri = Media.value("URL").toString();
+        auto fname = GET_FILE(uri);
+        if (!QFile::exists(fname)) {
+            qDebug()<<Q_FUNC_INFO<<"can't find local image "<<fname;
+        } else {
+            width = Media.value("WPixel").toInt();
+            int height = Media.value("HPixel").toInt();
+            xpos = (m_sceneImg->width() - width) /2;
+            //TODO 13% from phone app screen capture
+            int ypos = m_sceneImg->height() * 13/100;
+            if (QImage img; img.load(fname)) {
+                img = img.scaled(width, height, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+                m_scenePainter->drawImage(QPoint(xpos, ypos), img);
+            }
+        }
+    }
+    /*
+     * Text ypos 50% of height, from phone app screen capture
+     * 30% height of screen height, from from phone app screen capture
+     */
+    if (const QString text = node.value("Text").toString(); !text.isEmpty()) {
+        auto font = m_scenePainter->font();
+        //TODO mageic size of font
+        font.setPixelSize(56);
+        m_scenePainter->setFont(font);
+
+       m_scenePainter->drawText(xpos, m_sceneImg->height() /2,
+                                 width, m_sceneImg->height() *30/100,
+                                 Qt::TextWordWrap | Qt::TextIncludeTrailingSpaces,
+                                 text);
+    }
+
+    int logoTextW = 0;
+    auto flogo = GET_FILE(node.value("Logo").toString());
+    QImage logoImg;
+//TODO not correct for drawing logo image, remove atm
+#if 0
+    if (QFile::exists(flogo) && logoImg.load(flogo)) {
+        //TODO mageic size of font * 2
+        logoImg = logoImg.scaled(144, 144, Qt::KeepAspectRatio);
+        logoTextW += logoImg.width();
+        qDebug()<<Q_FUNC_INFO<<"logo image "<<logoImg;
+    }
+    //add space between logo and KindergartenName text
+    //TODO magic size
+    const int space = 62;
+    logoTextW += space;
+#else
+    const int space = 0;
+#endif
+    auto KindergartenName = node.value("KindergartenName").toString();
+    if (!KindergartenName.isEmpty()) {
+        auto font = m_scenePainter->font();
+        //TODO mageic size of font
+        font.setPixelSize(72);
+        m_scenePainter->setFont(font);
+
+        QFontMetrics fm(font);
+        logoTextW += fm.horizontalAdvance(KindergartenName);
+    }
+    xpos = (m_sceneImg->width() - logoTextW) /2;
+    auto ypos = m_sceneImg->height() * 94/100;
+#if 0
+    if (!logoImg.isNull()) {
+        //FIXME why ypos of logo image is not correct?
+        m_scenePainter->drawImage(QPoint(xpos, ypos), logoImg);
+    }
+#endif
+    if (!KindergartenName.isEmpty()) {
+        m_scenePainter->drawText(QPoint(xpos + logoImg.width() + space, ypos), KindergartenName);
+    }
+
+
+
 
 }
 

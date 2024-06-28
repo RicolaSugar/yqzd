@@ -30,6 +30,8 @@ protected:
 
 private:
     void drawBackground(const QJsonObject &rootNode);
+    void drawElement(const QJsonObject &node);
+    void drawTemplateElement(const QJsonObject &node);
 
 
 
