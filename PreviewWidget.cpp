@@ -105,11 +105,36 @@ void PreviewWidget::drawPage(int pgNum)
     // m_curID = pgNum;
     auto root = m_pages.at(pgNum).toObject();
     m_curID = root.value("ID").toInt(-1);
-    drawBackground(root);
 
-    if (auto ele = root.value("Element").toObject(); !ele.isEmpty()) {
-        drawElement(ele);
+    if (auto Property = root.value("Property").toObject(); !Property.isEmpty()) {
+        drawBackground(Property);
+
+        const auto Type = Property.value("Type").toString();
+
+        qDebug()<<Q_FUNC_INFO<<"type "<<Type;
+
+        if (Type == QLatin1StringView("intro")) {
+            drawIntroPage(root);
+        }
+        else if (Type == QLatin1StringView("version")) {
+            drawVersionPage(root);
+        }
+        else if (Type == QLatin1StringView("directory")) {
+            drawDirectoryPage(root);
+        }
+        else if (Type == QLatin1StringView("profile")) {
+            drawProfilePage(root);
+        }
     }
+
+
+
+
+    // drawBackground(root);
+
+    // if (auto ele = root.value("Element").toObject(); !ele.isEmpty()) {
+    //     drawElement(ele);
+    // }
 
 
 
@@ -137,15 +162,157 @@ bool PreviewWidget::parseProperty(const QJsonObject &obj)
     if (obj.isEmpty()) {
         return false;
     }
-    if (auto PageSize = obj.value("PageSize").toObject(); !PageSize.isEmpty()) {
+    if (const auto PageSize = obj.value("PageSize").toObject(); !PageSize.isEmpty()) {
         m_pageSize.PageHeight       = PageSize.value("PageHeight").toInt();
         m_pageSize.PageWidth        = PageSize.value("PageWidth").toInt();
         m_pageSize.FeedPageHeight   = PageSize.value("FeedPageHeight").toInt();
         m_pageSize.FeedPageWidth    = PageSize.value("FeedPageWidth").toInt();
         m_pageSize.SubjectPageWidth = PageSize.value("SubjectPageWidth").toInt();
-        return true;
+     }
+    if (const auto DividingLine = obj.value("DividingLine").toObject(); !DividingLine.isEmpty()) {
+        m_dvLine.X      = DividingLine.value("X").toInt();
+        m_dvLine.Width  = DividingLine.value("Width").toInt();
+        m_dvLine.Height = DividingLine.value("Height").toInt();
+        m_dvLine.Color  = DividingLine.value("Color").toString();
     }
-    return false;
+
+    return true;
+}
+
+void PreviewWidget::drawIntroPage(const QJsonObject &node)
+{
+    if (auto ele = node.value("Element").toObject(); !ele.isEmpty()) {
+        // drawElement(ele);
+        if (const int TemplateType = ele.value("TemplateType").toInt(); TemplateType == 1) {
+            drawTemplateElement(ele);
+            return;
+        }
+    }
+}
+
+void PreviewWidget::drawVersionPage(const QJsonObject &node)
+{
+
+    if (const auto Element = node.value("Element").toObject(); !Element.isEmpty()) {
+        // m_scenePainter->restore();
+        const int xpos = (m_pageSize.PageWidth - m_pageSize.FeedPageWidth) /2;
+        //TODO magic code for x/y space
+        const int yspace = 96;
+        const int xspace = 96;
+        //TODO magic code for verison page start y pos;
+        int ypos = m_pageSize.PageHeight *3/10;
+        if (const auto Head = Element.value("Head").toObject(); !Head.isEmpty()) {
+            const auto Headline = Head.value("Headline").toString();
+            const auto Subline = Head.value("Subline").toString();
+
+            auto font = m_scenePainter->font();
+            //TODO magic code for font size
+            font.setPixelSize(112);
+            m_scenePainter->setFont(font);
+            m_scenePainter->drawText(xpos, ypos, Headline);
+
+            QFontMetrics fm(font);
+            auto w = fm.horizontalAdvance(Headline);
+            w += xspace;
+            //TODO magic code for font size
+            font.setPixelSize(60);
+            m_scenePainter->setFont(font);
+            m_scenePainter->drawText(xpos + w, ypos, Subline);
+        }
+        if (const auto Body = Element.value("Body").toObject(); !Body.isEmpty()) {
+            ypos += yspace;
+            m_scenePainter->setBrush(QColor::fromString(m_dvLine.Color));
+            m_scenePainter->drawLine(xpos, ypos,
+                                     m_pageSize.PageWidth - xpos, ypos);
+
+            ypos += yspace;
+            auto font = m_scenePainter->font();
+             //TODO magic code for font size
+            font.setPixelSize(48);
+            m_scenePainter->setFont(font);
+            QFontMetrics fm(font);
+
+            if (const auto Authors = Body.value("Authors").toString(); !Authors.isEmpty()) {
+                ypos += yspace;
+                const QString cn_str("作者：");
+                m_scenePainter->drawText(xpos, ypos, cn_str);
+                auto w = fm.horizontalAdvance(cn_str);
+                m_scenePainter->drawText(xpos + w, ypos, Authors);
+            }
+
+            if (const auto PageNumber = Body.value("PageNumber").toInt(-1); PageNumber != -1) {
+                ypos += yspace;
+                const QString cn_str("页数：");
+                m_scenePainter->drawText(xpos, ypos, cn_str);
+                auto w = fm.horizontalAdvance(cn_str);
+                m_scenePainter->drawText(xpos + w, ypos, QString::number(PageNumber));
+            }
+            if (const auto Records = Body.value("Records").toString(); !Records.isEmpty()) {
+                ypos += yspace;
+                const QString cn_str("记录：");
+                m_scenePainter->drawText(xpos, ypos, cn_str);
+                auto w = fm.horizontalAdvance(cn_str);
+                m_scenePainter->drawText(xpos + w, ypos, Records);
+            }
+            if (const auto TimeInterval = Body.value("TimeInterval").toString(); !TimeInterval.isEmpty()) {
+                ypos += yspace;
+                const QString cn_str("时间：");
+                m_scenePainter->drawText(xpos, ypos, cn_str);
+                auto w = fm.horizontalAdvance(cn_str);
+                m_scenePainter->drawText(xpos + w, ypos, TimeInterval);
+            }
+        }
+
+    }
+
+}
+
+void PreviewWidget::drawDirectoryPage(const QJsonObject &node)
+{
+    if (const auto Element = node.value("Element").toObject(); !Element.isEmpty()) {
+        if (const auto Entries = Element.value("Entries").toArray(); !Entries.isEmpty()) {
+            const int xpos      = (m_pageSize.PageWidth - m_pageSize.FeedPageWidth) /2;
+            //TODO magic code for x/y space
+            const int xspace    = 96;
+            for (const auto &it : Entries) {
+                if (const auto obj = it.toObject(); !obj.isEmpty()) {
+                    auto font       = m_scenePainter->font();
+                    const int Type  = obj.value("Type").toInt(-1);
+                    //TODO magic code for font size
+                    font.setPixelSize(48);
+                    if (Type == 1) {
+                        font.setPixelSize(72);
+                    } else if (Type == 2) {
+                        font.setPixelSize(48);
+                    }
+                    if (Type != -1) {
+                        m_scenePainter->setFont(font);
+                    }
+
+                    const int ypos          = obj.value("Y").toInt();
+                    const int Pagination    = obj.value("Pagination").toInt();
+                    const bool HasVideo     = obj.value("HasVideo").toBool();
+                    //TODO use emoji?
+                    const auto Text         = obj.value("Text").toString() + (HasVideo ? "  \u231B" : "");
+
+                    if (Pagination < 100) {
+                        auto ptext = QString("%1").arg(Pagination, 2, 10, QChar('0'));
+                        m_scenePainter->drawText(xpos, ypos, ptext);
+                    } else {
+                        m_scenePainter->drawText(xpos, ypos, QString::number(Pagination));
+                    }
+                    m_scenePainter->drawText(xpos + xspace * 3, ypos, Text);
+                }
+            }
+        }
+    }
+}
+
+void PreviewWidget::drawProfilePage(const QJsonObject &node)
+{
+    if (const auto Element = node.value("Element").toObject(); !Element.isEmpty()) {
+
+    }
 }
 
 //TODO refactor
@@ -165,12 +332,12 @@ auto tag = [](const QString &uri) -> QString {
         .arg(tag(uri));
 
 
-void PreviewWidget::drawBackground(const QJsonObject &rootNode)
+void PreviewWidget::drawBackground(const QJsonObject &PropertyObject)
 {
-    if (auto Property = rootNode.value("Property").toObject(); !Property.isEmpty()) {
-        int Height= Property.value("Height").toInt();
+    // if (auto Property = PropertyObject.value("Property").toObject(); !Property.isEmpty()) {
+        int Height= PropertyObject.value("Height").toInt();
         qDebug()<<Q_FUNC_INFO<<"Height "<<Height;
-        if (auto Background = Property.value("Background").toObject(); !Background.isEmpty()) {
+        if (auto Background = PropertyObject.value("Background").toObject(); !Background.isEmpty()) {
             auto uri = Background.value("ImageUrl").toString();
             auto fname = GET_FILE(uri);
             QImage img;
@@ -185,20 +352,20 @@ void PreviewWidget::drawBackground(const QJsonObject &rootNode)
                                                 img.height()));
             }
         }
-    }
+    // }
 
 }
 
 void PreviewWidget::drawElement(const QJsonObject &node)
 {
-    if (node.isEmpty()) {
-        return;
-    }
+    // if (node.isEmpty()) {
+    //     return;
+    // }
 
-    if (const int TemplateType = node.value("TemplateType").toInt(); TemplateType == 1) {
-        drawTemplateElement(node);
-        return;
-    }
+    // if (const int TemplateType = node.value("TemplateType").toInt(); TemplateType == 1) {
+    //     drawTemplateElement(node);
+    //     return;
+    // }
 }
 
 void PreviewWidget::drawTemplateElement(const QJsonObject &node)

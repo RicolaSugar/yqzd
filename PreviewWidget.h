@@ -29,11 +29,14 @@ protected:
     virtual bool parseProperty(const QJsonObject &obj);
 
 private:
-    void drawBackground(const QJsonObject &rootNode);
+    void drawIntroPage(const QJsonObject &node);
+    void drawVersionPage(const QJsonObject &node);
+    void drawDirectoryPage(const QJsonObject &node);
+    void drawProfilePage(const QJsonObject &node);
+
+    void drawBackground(const QJsonObject &PropertyObject);
     void drawElement(const QJsonObject &node);
     void drawTemplateElement(const QJsonObject &node);
-
-
 
 private:
     QImage *m_sceneImg = nullptr;
@@ -45,6 +48,7 @@ private:
     PageSize m_pageSize;
 
     QJsonArray m_pages;
+    DividingLine m_dvLine;
 
 
 
