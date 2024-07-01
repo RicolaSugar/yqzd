@@ -39,11 +39,15 @@ private:
     void drawTemplateElement(const QJsonObject &node);
 
 private:
+    QString dotExtension(const QString &uri);
+
+private:
     QImage *m_sceneImg = nullptr;
     QPainter *m_scenePainter = nullptr;
 
     int m_curID = -1;
     QString m_mediaPath;
+    QString m_profileAvatar;
 
     PageSize m_pageSize;
 
@@ -53,5 +57,7 @@ private:
 
 
 };
+
+
 
 #endif // PREVIEWWIDGET_H

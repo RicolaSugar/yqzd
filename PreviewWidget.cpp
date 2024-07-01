@@ -12,7 +12,9 @@
 #include <QtNumeric>
 
 #include <QPainter>
+#include <QPainterPath>
 #include <QImage>
+#include <QPixmap>
 #include <QFontMetrics>
 
 #include <QJsonDocument>
@@ -30,6 +32,14 @@ PreviewWidget::~PreviewWidget()
 {
     qDebug()<<Q_FUNC_INFO<<"----------------";
 }
+
+#define GET_FILE(uri) \
+QString("%1/%2/%3.%4") \
+    .arg(m_mediaPath) \
+    .arg(m_curID) \
+    /*.arg(obj.uri().toUtf8().toBase64())*/ \
+    .arg(QCryptographicHash::hash(uri.toUtf8(), QCryptographicHash::Md5).toHex()) \
+    .arg(dotExtension(uri));
 
 bool PreviewWidget::load(const QString &jsonPath, const QString &mediaPath)
 {
@@ -68,17 +78,26 @@ bool PreviewWidget::load(const QString &jsonPath, const QString &mediaPath)
         return false;
     }
 
-    {
-        if (auto Property = data.value("Property").toObject(); !Property.isEmpty()) {
-            if (!parseProperty(Property)) {
-                qDebug()<<Q_FUNC_INFO<<"parese Property Error: "<<Property;
-                return false;
-            }
-        } else {
-            qDebug()<<Q_FUNC_INFO<<"get Property object error";
+    if (auto Property = data.value("Property").toObject(); !Property.isEmpty()) {
+        if (!parseProperty(Property)) {
+            qDebug()<<Q_FUNC_INFO<<"parese Property Error: "<<Property;
             return false;
         }
+    } else {
+        qDebug()<<Q_FUNC_INFO<<"get Property object error";
+        return false;
     }
+
+    if (auto Profile = data.value("Profile").toObject(); !Profile.isEmpty()) {
+        if (const QString Avatar = Profile.value("Avatar").toString(); !Avatar.isEmpty()) {
+            m_profileAvatar = GET_FILE(Avatar);
+            if (!QFile::exists(m_profileAvatar)) {
+                qWarning()<<Q_FUNC_INFO<<"Can't find ProfileAvatar in path "<<m_profileAvatar;
+                m_profileAvatar = QString();
+            }
+        }
+    }
+
 
     if (m_pages = data.value("Pages").toArray(); m_pages.isEmpty()) {
         qDebug()<<Q_FUNC_INFO<<"can't find pages";
@@ -310,27 +329,33 @@ void PreviewWidget::drawDirectoryPage(const QJsonObject &node)
 
 void PreviewWidget::drawProfilePage(const QJsonObject &node)
 {
+    //TODO magic code for pos and size
+    //圆形头像 直径530,x455, y685
+    //name/age x1150, y940
+    //KindergartenName x560, y1410
+    //Teachers, y2035
+    //Hobbies, y2710
+
+    if (QImage profileAvatar; profileAvatar.load(m_profileAvatar)) {
+        profileAvatar = profileAvatar.scaled(530, 530, Qt::KeepAspectRatio);
+
+        QPixmap pm(530, 530);
+        pm.fill(Qt::GlobalColor::transparent);
+
+        QPainter p(&pm);
+        p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+
+        QPainterPath path;
+        path.addEllipse(0, 0, pm.width(), pm.height());
+        p.setClipPath(path);
+        p.drawImage(pm.rect(), profileAvatar);
+        m_scenePainter->drawPixmap(455, 685, pm);
+    }
+
     if (const auto Element = node.value("Element").toObject(); !Element.isEmpty()) {
 
     }
 }
-
-//TODO refactor
-auto tag = [](const QString &uri) -> QString {
-    if (int idx = uri.lastIndexOf("."); idx >=0) {
-        return uri.sliced(idx+1);
-    }
-    return QString();
-};
-
-#define GET_FILE(uri) \
-    QString("%1/%2/%3.%4") \
-        .arg(m_mediaPath) \
-        .arg(m_curID) \
-        /*.arg(obj.uri().toUtf8().toBase64())*/ \
-        .arg(QCryptographicHash::hash(uri.toUtf8(), QCryptographicHash::Md5).toHex()) \
-        .arg(tag(uri));
-
 
 void PreviewWidget::drawBackground(const QJsonObject &PropertyObject)
 {
@@ -459,6 +484,16 @@ void PreviewWidget::drawTemplateElement(const QJsonObject &node)
 
 
 }
+
+QString PreviewWidget::dotExtension(const QString &uri)
+{
+    if (int idx = uri.lastIndexOf("."); idx >=0) {
+        return uri.sliced(idx+1);
+    }
+    return QString();
+}
+
+
 
 
 
