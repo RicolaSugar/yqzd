@@ -1,7 +1,9 @@
 #ifndef MEDIADOWNLOADER_H
 #define MEDIADOWNLOADER_H
 
+
 #include <QObject>
+#include <QMultiMap>
 #include <QSharedDataPointer>
 #include <QNetworkAccessManager>
 
@@ -55,7 +57,7 @@ private:
     QNetworkAccessManager       *m_networkMgr = nullptr;
     QList<QNetworkReply*>       m_replyList;
     QList<MediaObject>          m_dlList;
-    QMap<QString, MediaObject>  m_workingMap;
+    QMultiMap<QString, MediaObject>  m_workingMap;
 };
 
 #endif // MEDIADOWNLOADER_H

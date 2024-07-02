@@ -340,6 +340,7 @@ void MediaDownloader::processDownload()
 
                         m_dlList.append(obj);
                         if (!flag) {
+                            qDebug()<<Q_FUNC_INFO<<"---- restart download for failure object ";
                             Q_EMIT downloadState(QString("Re-stared failure obj %1").arg(obj.uri()));
                             processDownload();
                         }

@@ -39,7 +39,7 @@ QString("%1/%2/%3.%4") \
     .arg(m_curID) \
     /*.arg(obj.uri().toUtf8().toBase64())*/ \
     .arg(QCryptographicHash::hash(uri.toUtf8(), QCryptographicHash::Md5).toHex()) \
-    .arg(dotExtension(uri));
+    .arg(dotExtension(uri))
 
 bool PreviewWidget::load(const QString &jsonPath, const QString &mediaPath)
 {
@@ -110,6 +110,7 @@ bool PreviewWidget::load(const QString &jsonPath, const QString &mediaPath)
     }
     if (!m_scenePainter) {
         m_scenePainter = new QPainter(m_sceneImg);
+        m_scenePainter->setRenderHints(QPainter::RenderHint::Antialiasing | QPainter::RenderHint::TextAntialiasing);
     }
 
     return true;
@@ -144,6 +145,12 @@ void PreviewWidget::drawPage(int pgNum)
         else if (Type == QLatin1StringView("profile")) {
             drawProfilePage(root);
         }
+        else if (Type == QLatin1StringView("graduation-photo")) {
+            drawGraduationPhotoPage(root);
+        }
+    }
+    if (const auto Pagination = root.value("Pagination").toObject(); !Pagination.isEmpty()) {
+        drawPagination(Pagination);
     }
 
 
@@ -195,6 +202,22 @@ bool PreviewWidget::parseProperty(const QJsonObject &obj)
         m_dvLine.Color  = DividingLine.value("Color").toString();
     }
 
+    if (const auto Pagination = obj.value("Pagination").toObject(); !Pagination.isEmpty()) {
+        if (const auto Distance = Pagination.value("Distance").toObject(); !Distance.isEmpty()) {
+            m_pagination.DTSideDistance     = Distance.value("SideDistance").toInt();
+            m_pagination.DTBottomDistance   = Distance.value("BottomDistance").toInt();
+            m_pagination.DTIntervalDistance = Distance.value("IntervalDistance").toInt();
+        }
+        if (const auto Line = Pagination.value("Line").toObject(); !Line.isEmpty()) {
+            m_pagination.Line = std::pair(Line.value("Width").toInt(), Line.value("Height").toInt());
+        }
+        if (const auto Text = Pagination.value("Text").toObject(); !Text.isEmpty()) {
+            m_pagination.Text = std::pair(Text.value("FontSize").toInt(), Text.value("Height").toInt());
+        }
+        if (const auto Number = Pagination.value("Number").toObject(); !Number.isEmpty()) {
+            m_pagination.Number = std::pair(Number.value("FontSize").toInt(), Number.value("Height").toInt());
+        }
+    }
     return true;
 }
 
@@ -353,7 +376,215 @@ void PreviewWidget::drawProfilePage(const QJsonObject &node)
     }
 
     if (const auto Element = node.value("Element").toObject(); !Element.isEmpty()) {
+        const int space         = 20;
+        const int xpos          = 520;
+        const int AgeInt        = Element.value("Age").toString().toInt();
+        const QString name      = QString("我叫%1").arg(Element.value("Name").toString());
+        const QString AgeStr    = QString("%1岁%2个月啦").arg(AgeInt/12).arg(AgeInt%12);
+        auto font         = m_scenePainter->font();
+        //TODO font size
+        font.setPixelSize(88);
+        m_scenePainter->setFont(font);
+        m_scenePainter->setPen(Qt::GlobalColor::white);
+        m_scenePainter->drawText(1050, 1000, name);
+        QFontMetrics fm(font);
+        m_scenePainter->drawText(1050, 1000 + fm.height(), AgeStr);
 
+        font.setPixelSize(60);
+        m_scenePainter->setFont(font);
+        m_scenePainter->setPen(QColor("#46e6b3"));
+        m_scenePainter->drawText(xpos, 1450, "我的幼儿园");
+
+        font.setPixelSize(48);
+        fm = QFontMetrics(font);
+
+        m_scenePainter->setFont(font);
+        m_scenePainter->setPen(Qt::GlobalColor::black);
+
+        auto ypos = 1450 + fm.height() + space;
+        m_scenePainter->drawText(xpos,
+                                 ypos,
+                                 Element.value("KindergartenName").toString());
+
+        ypos += fm.height() + space;
+        m_scenePainter->drawText(xpos,
+                                 ypos,
+                                 Element.value("ClazzName").toString());
+
+        ypos = 2035;
+        font.setPixelSize(60);
+        m_scenePainter->setFont(font);
+        m_scenePainter->setPen(QColor("#46e6b3"));
+        m_scenePainter->drawText(xpos, ypos, "我的老师");
+
+        font.setPixelSize(48);
+        fm = QFontMetrics(font);
+
+        m_scenePainter->setFont(font);
+        m_scenePainter->setPen(Qt::GlobalColor::black);
+
+        ypos += fm.height() + space;
+        m_scenePainter->drawText(xpos,
+                                 ypos,
+                                 Element.value("Teachers").toString());
+
+
+        ypos = 2710;
+        font.setPixelSize(60);
+        m_scenePainter->setFont(font);
+        m_scenePainter->setPen(QColor("#46e6b3"));
+        m_scenePainter->drawText(xpos, ypos, "我最喜欢");
+
+        font.setPixelSize(48);
+        fm = QFontMetrics(font);
+
+        m_scenePainter->setFont(font);
+        m_scenePainter->setPen(Qt::GlobalColor::black);
+
+        ypos += fm.height() + space;
+        m_scenePainter->drawText(xpos,
+                                 ypos,
+                                 Element.value("Hobbies").toString());
+    }
+}
+
+void PreviewWidget::drawGraduationPhotoPage(const QJsonObject &node)
+{
+    //title color #8c6b5b , sub #8d715f
+    if (const auto Element = node.value("Element").toObject(); !Element.isEmpty()) {
+        const QString title = QString("%1%2").arg(Element.value("ClazzName").toString())
+                                  .arg(Element.value("Title").toString().replace("#", ""));
+        const QString subTitle("我和小伙伴们一起长大");
+
+        //TODO magic code
+        const int space = 300;
+        int xpos = 300;
+        int ypos = 3200;
+        // int xpos = 1000;
+        // int ypos = 1000;
+
+        QFont font = m_scenePainter->font();
+        //TODO magic size for font
+        font.setPixelSize(88);
+        QFontMetrics fm(font);
+
+        const int wDelta = m_pageSize.PageWidth - xpos - fm.height();
+
+        m_scenePainter->setFont(font);
+        m_scenePainter->setPen(QColor("#8c6b5b"));
+          // m_scenePainter->drawText(xpos, ypos - fm.descent(), title);
+
+        m_scenePainter->translate(xpos, ypos);
+        m_scenePainter->rotate(-90);
+        m_scenePainter->drawText(0, - fm.descent(), title);
+
+        font.setPixelSize(48);
+        m_scenePainter->setFont(font);
+        m_scenePainter->setPen(QColor("#8d715f"));
+        m_scenePainter->drawText(fm.horizontalAdvance(title) + space, - fm.descent(), subTitle);
+
+        m_scenePainter->rotate(90);
+        m_scenePainter->translate(-xpos , -ypos);
+
+        if (const auto Image = Element.value("Image").toObject(); !Image.isEmpty()) {
+            if (QImage img; img.load(GET_FILE(Image.value("URL").toString()))) {
+                // const int w = Image.value("Width").toInt();
+                // const int h = Image.value("Height").toInt();
+
+                if (img.width() > img.height()) {
+                    img = img.scaled(m_pageSize.FeedPageHeight, m_pageSize.FeedPageWidth,
+                               Qt::AspectRatioMode::KeepAspectRatio,
+                               Qt::TransformationMode::SmoothTransformation);
+                } else {
+                    img = img.scaled(m_pageSize.FeedPageWidth, m_pageSize.FeedPageHeight,
+                                     Qt::AspectRatioMode::KeepAspectRatio,
+                                     Qt::TransformationMode::SmoothTransformation);
+                }
+                const int w = img.width();
+                const int h = img.height();
+
+                xpos = (m_pageSize.PageWidth - wDelta) + (wDelta - qMin(w, h))/2;
+                // ypos = qMax(w, h) + (m_pageSize.PageHeight - qMax(w, h))/2;
+
+                if (w > h) { // rotate -90
+                    ypos = qMax(w, h) + (m_pageSize.PageHeight - qMax(w, h))/2;
+                    m_scenePainter->translate(xpos, ypos);
+                    m_scenePainter->rotate(-90);
+                    m_scenePainter->drawImage(0, 0, img);
+
+                    m_scenePainter->rotate(90);
+                    m_scenePainter->translate(-xpos , -ypos);
+                } else {
+                    ypos = (m_pageSize.PageHeight - qMax(w, h))/2;
+                    m_scenePainter->drawImage(xpos, ypos, img);
+                }
+            }
+
+        }
+    }
+    // m_scenePainter->drawRect(0,0, 500, 500);
+
+}
+
+void PreviewWidget::drawPagination(const QJsonObject &node)
+{
+    const int Location      = node.value("Location").toInt();
+    const QString Number    = QString("%1").arg(node.value("Number").toInt(), 2, 10, QChar('0'));
+    const QString Text      = node.value("Text").toString();
+    QFont font              = m_scenePainter->font();
+    int ypos                = m_pageSize.PageHeight - m_pagination.DTBottomDistance;
+
+    m_scenePainter->setPen(Qt::GlobalColor::black);
+    m_scenePainter->setBrush(Qt::GlobalColor::black);
+    if (Location == 1) { //left
+        int xpos = m_pagination.DTSideDistance;
+        font.setPixelSize(std::get<0>(m_pagination.Number));
+        m_scenePainter->setFont(font);
+
+        QFontMetrics fm(font);
+        m_scenePainter->drawText(xpos, ypos - fm.descent(), Number);
+
+        xpos += fm.horizontalAdvance(Number);
+        xpos += m_pagination.DTIntervalDistance;
+
+        m_scenePainter->drawRect(xpos,
+                                 ypos - std::get<1>(m_pagination.Line),
+                                 std::get<0>(m_pagination.Line),
+                                 std::get<1>(m_pagination.Line));
+
+        xpos += std::get<0>(m_pagination.Line);
+        xpos += m_pagination.DTIntervalDistance;
+
+        font.setPixelSize(std::get<0>(m_pagination.Text));
+        fm = QFontMetrics(font);
+        m_scenePainter->setFont(font);
+        m_scenePainter->drawText(xpos, ypos - fm.descent(), Text);
+    }
+    else if (Location == 2) { //right
+        font.setPixelSize(std::get<0>(m_pagination.Number));
+        m_scenePainter->setFont(font);
+
+        QFontMetrics fm(font);
+        int xpos = m_pageSize.PageWidth - m_pagination.DTSideDistance;
+        xpos    -= fm.horizontalAdvance(Number);
+        m_scenePainter->drawText(xpos, ypos - fm.descent(), Number);
+
+        xpos -= m_pagination.DTIntervalDistance;
+        xpos -= std::get<0>(m_pagination.Line);
+
+        m_scenePainter->drawRect(xpos,
+                                 ypos - std::get<1>(m_pagination.Line),
+                                 std::get<0>(m_pagination.Line),
+                                 std::get<1>(m_pagination.Line));
+
+        xpos -= m_pagination.DTIntervalDistance;
+
+        font.setPixelSize(std::get<0>(m_pagination.Text));
+        m_scenePainter->setFont(font);
+
+        fm      = QFontMetrics(font);
+        xpos    -= fm.horizontalAdvance(Text);
+        m_scenePainter->drawText(xpos, ypos - fm.descent(), Text);
     }
 }
 

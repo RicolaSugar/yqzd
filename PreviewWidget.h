@@ -33,6 +33,10 @@ private:
     void drawVersionPage(const QJsonObject &node);
     void drawDirectoryPage(const QJsonObject &node);
     void drawProfilePage(const QJsonObject &node);
+    void drawGraduationPhotoPage(const QJsonObject &node);
+
+
+    void drawPagination(const QJsonObject &node);
 
     void drawBackground(const QJsonObject &PropertyObject);
     void drawElement(const QJsonObject &node);
@@ -53,6 +57,7 @@ private:
 
     QJsonArray m_pages;
     DividingLine m_dvLine;
+    Pagination m_pagination;
 
 
 
