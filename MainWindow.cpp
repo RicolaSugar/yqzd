@@ -97,7 +97,7 @@ MainWindow::MainWindow(QWidget *parent)
         // w->drawPage(0);
         // w->show();
         m_previewWidget->load(m_datafile, m_outpath);
-        m_previewWidget->drawPage(9);
+        m_previewWidget->drawPage(12);
     });
 
     connect(m_mediaDL, &MediaDownloader::dlError,

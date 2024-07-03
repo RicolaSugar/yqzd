@@ -238,7 +238,13 @@ void MediaDownloader::download(const QString &dataFile, const QString &outPath)
             if (auto Image = Element.value("Image").toObject(); !Image.isEmpty()) {
                 CHK_AND_APPEND(Image, "URL", id);
             }
-
+            if (const auto Images = Element.value("Images").toArray(); !Images.isEmpty()) {
+                for (const auto &it : Images) {
+                    if (const auto o = it.toObject(); !o.isEmpty()) {
+                        CHK_AND_APPEND(o, "URL", id);
+                    }
+                }
+            }
 
 
         }

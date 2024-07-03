@@ -148,7 +148,18 @@ void PreviewWidget::drawPage(int pgNum)
         else if (Type == QLatin1StringView("graduation-photo")) {
             drawGraduationPhotoPage(root);
         }
+        else if (Type == QLatin1StringView("graduation-movie")) {
+            drawGraduationMoviePaget(root);
+        }
+        else if (Type == QLatin1StringView("graduation-dream")) {
+            drawGraduationDreamPage(root);
+        }
+        else if (Type == QLatin1StringView("hybrid-subject")) {
+            drawHybridSubject(root, Property);
+        }
+
     }
+
     if (const auto Pagination = root.value("Pagination").toObject(); !Pagination.isEmpty()) {
         drawPagination(Pagination);
     }
@@ -519,11 +530,170 @@ void PreviewWidget::drawGraduationPhotoPage(const QJsonObject &node)
                     m_scenePainter->drawImage(xpos, ypos, img);
                 }
             }
-
         }
     }
     // m_scenePainter->drawRect(0,0, 500, 500);
 
+}
+
+void PreviewWidget::drawGraduationMoviePaget(const QJsonObject &node)
+{
+    if (const auto Element = node.value("Element").toObject(); !Element.isEmpty()) {
+        if (const auto Image = Element.value("Image").toObject(); !Image.empty()) {
+            if (QImage img; img.load(GET_FILE(Image.value("URL").toString()))) {
+                //based on background image size
+                int xpos = 500;
+                int ypos = 790;
+                const QSize bgRect(1460, 1100);
+                img = img.scaledToWidth(bgRect.width() *95/100, Qt::SmoothTransformation);
+                if (img.height() > bgRect.height()) {
+                    img = img.scaledToHeight(bgRect.height() *95/100, Qt::SmoothTransformation);
+                }
+                xpos += (bgRect.width() - img.width())/2;
+                ypos += (bgRect.height() - img.height())/2;
+                m_scenePainter->drawImage(xpos, ypos, img);
+            }
+        }
+        //TODO add QR code
+    }
+}
+
+void PreviewWidget::drawGraduationDreamPage(const QJsonObject &node)
+{
+    if (const auto Element = node.value("Element").toObject(); !Element.isEmpty()) {
+        if (const auto Images = Element.value("Images").toArray(); !Images.empty()) {
+            //TODO only draw first image atm
+            if (const auto Image = Images.at(0).toObject(); !Image.isEmpty()) {
+                if (QImage img; img.load(GET_FILE(Images.at(0).toObject().value("URL").toString()))) {
+                    img = img.scaled(m_pageSize.PageWidth *3/5,
+                                     m_pageSize.PageHeight *3/5,
+                                     Qt::KeepAspectRatio,
+                                     Qt::SmoothTransformation);
+
+                    const int xpos = (m_pageSize.PageWidth - img.width())/2;
+                    const int ypos = (m_pageSize.PageHeight - img.height())/2;
+
+                    m_scenePainter->setBrush(Qt::GlobalColor::white);
+                    m_scenePainter->setPen(Qt::GlobalColor::white);
+                    m_scenePainter->drawRoundedRect(xpos - 10, ypos - 10,
+                                                    img.width() + 20, img.height() + 20, 20, 20);
+
+                    m_scenePainter->setBrush(Qt::GlobalColor::black);
+                    m_scenePainter->setPen(Qt::GlobalColor::black);
+
+                    QPixmap pm(img.width(), img.height());
+                    pm.fill(Qt::GlobalColor::transparent);
+
+                    QPainter p(&pm);
+                    p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+
+                    QPainterPath path;
+                    path.addRoundedRect(0, 0, pm.width(), pm.height(), 20, 20);
+                    p.setClipPath(path);
+                    p.drawImage(pm.rect(), img);
+                    m_scenePainter->drawPixmap(xpos, ypos, pm);
+                }
+            }
+        }
+    }
+}
+
+void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject &property)
+{
+    auto Elements = node.value("Elements").toArray();
+    if (Elements.isEmpty()) {
+        return;
+    }
+    for (const auto &it : Elements) {
+        const auto object = it.toObject();
+        if (object.isEmpty()) {
+            continue;
+        }
+        const auto Label = object.value("Label").toObject();
+        if (Label.isEmpty()) {
+            continue;
+        }
+        const auto Body = object.value("Body").toObject();
+        const auto Head = object.value("Head").toObject();
+        // int xpos = 0;
+        // int ypos = 0;
+        /** subject **/
+        if (const auto Type = Label.value("Type").toString() == QLatin1StringView("subject")) {
+            int xpos = Label.value("XCoordinate").toInt();
+            int ypos = Label.value("YCoordinate").toInt();
+
+            auto font = m_scenePainter->font();
+            //TODO font size,
+            font.setPixelSize(112);
+            m_scenePainter->setFont(font);
+
+            QFontMetrics fm(font);
+            //NOTE Background always !empty in this json file,so ignore null check
+            if (const auto Color = property.value("Background").toObject().value("Color").toString();
+                !Color.isEmpty()) {
+                QColor c(Color);
+                c.setAlphaF(0.8);
+                m_scenePainter->setPen(c);
+                m_scenePainter->setBrush(c);
+            }
+            if (const auto Title = Head.value("Title").toObject(); !Title.isEmpty()) {
+                if (const auto Lines = Title.value("Lines").toArray(); !Lines.isEmpty()) {
+                    for (const auto &l : Lines) {
+                        auto lo = l.toObject();
+                        if (lo.isEmpty()) {
+                            continue;
+                        }
+                        const auto Text         = lo.value("Text").toString();
+                        const auto XCoordinates = lo.value("XCoordinates").toArray();
+                        const int YCoordinate   = lo.value("YCoordinate").toInt();
+#if 0
+                        if (Text.size() != XCoordinates.size()) {
+                            qWarning()<<Q_FUNC_INFO<<"Text.size() != XCoordinates.size(), ignore XCoordinates";
+                            m_scenePainter->drawText(xpos, ypos, Text);
+                        } else {
+                            for (int i=0; i<Text.size(); ++i) {
+                                xpos += XCoordinates.at(i).toInt();
+                                m_scenePainter->drawText(xpos, ypos - fm.descent(), Text.at(i));
+                            }
+                        }
+#else
+                        m_scenePainter->drawText(xpos, ypos, QString("‘““  %1").arg(Text));
+#endif
+                    }
+                }
+            }
+        } /** end subject **/
+
+        if (const auto Type = Label.value("Type").toString() == QLatin1StringView("feed")) {
+            int xpos = Label.value("XCoordinate").toInt();
+            int ypos = Label.value("YCoordinate").toInt();
+
+            //NOTE Background always !empty in this json file,so ignore null check
+            if (const auto Color = property.value("Background").toObject().value("Color").toString();
+                !Color.isEmpty()) {
+                m_scenePainter->setPen(QColor(Color));
+                m_scenePainter->setBrush(QColor(Color));
+            }
+            m_scenePainter->drawRoundedRect(xpos, ypos,
+                                            Label.value("Width").toInt(),
+                                            Label.value("Height").toInt(),
+                                            10, 10);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        }
+    }
 }
 
 void PreviewWidget::drawPagination(const QJsonObject &node)
@@ -599,7 +769,8 @@ void PreviewWidget::drawBackground(const QJsonObject &PropertyObject)
             QImage img;
             if (img.load(fname)) {
                 //TODO fit size
-                img = img.scaledToHeight(Height, Qt::SmoothTransformation);
+                // img = img.scaledToHeight(Height, Qt::SmoothTransformation);
+                img = img.scaledToHeight(m_pageSize.PageHeight, Qt::SmoothTransformation);
                 m_scenePainter->drawImage(m_sceneImg->rect().topLeft(),
                                           img,
                                           QRect(qMax(qAbs(img.width()-m_sceneImg->width()), 0),
