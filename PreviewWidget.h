@@ -37,6 +37,7 @@ private:
     void drawGraduationMoviePaget(const QJsonObject &node);
     void drawGraduationDreamPage(const QJsonObject &node);
     void drawHybridSubject(const QJsonObject &node, const QJsonObject &property);
+    void drawFeedPage(const QJsonObject &node, const QJsonObject &property);
 
 
     void drawPagination(const QJsonObject &node);
