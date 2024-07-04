@@ -5,6 +5,8 @@ build*/
 /build
 /lbuild
 
+*.TMP
+
 *.user
 
 # Compiled Object files

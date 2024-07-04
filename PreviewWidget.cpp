@@ -665,8 +665,8 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
         } /** end subject **/
 
         if (const auto Type = Label.value("Type").toString() == QLatin1StringView("feed")) {
-            int xpos = Label.value("XCoordinate").toInt();
-            int ypos = Label.value("YCoordinate").toInt();
+            const int xpos = Label.value("XCoordinate").toInt();
+            const int ypos = Label.value("YCoordinate").toInt();
 
             //NOTE Background always !empty in this json file,so ignore null check
             if (const auto Color = property.value("Background").toObject().value("Color").toString();
@@ -679,6 +679,74 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                                             Label.value("Height").toInt(),
                                             10, 10);
 
+            m_scenePainter->translate(xpos, ypos);
+
+            {
+                m_scenePainter->setPen(Qt::GlobalColor::magenta);
+                m_scenePainter->setBrush(Qt::GlobalColor::transparent);
+                m_scenePainter->drawRect(0, 0, 500, 500);
+            }
+
+            if (auto cr = Label.value("Content").toString().split("-"); cr.size() == 3) {
+                m_scenePainter->setPen(Qt::GlobalColor::white);
+                m_scenePainter->setBrush(Qt::GlobalColor::white);
+                auto font = m_scenePainter->font();
+                font.setPixelSize(88);
+                m_scenePainter->setFont(font);
+
+                QFontMetrics fm(font);
+                int w = fm.horizontalAdvance(cr.at(2));
+                int x = (Label.value("Width").toInt() - w)/2;
+                int y = fm.ascent();
+
+                m_scenePainter->drawText(x, y, cr.takeLast());
+
+                y = fm.height();
+
+                font.setPixelSize(48);
+                fm = QFontMetrics(font);
+                m_scenePainter->setFont(font);
+
+                const QString text = cr.join("/");
+                w = fm.horizontalAdvance(text);
+                x = (Label.value("Width").toInt() - w)/2;
+                // y = (y - fm.descent() + fm.height());
+                y += fm.ascent();
+
+                m_scenePainter->drawText(x, y, text);
+            }
+            if (const auto Title = Head.value("Title").toObject(); !Title.isEmpty()) {
+                auto font = m_scenePainter->font();
+                font.setPixelSize(88);
+                m_scenePainter->setFont(font);
+
+                QFontMetrics fm(font);
+
+                if (const auto Lines = Title.value("Lines").toArray(); !Lines.isEmpty()) {
+                    for (const auto &l : Lines) {
+                        auto lo = l.toObject();
+                        if (lo.isEmpty()) {
+                            continue;
+                        }
+                        const auto Text         = lo.value("Text").toString();
+                        const auto XCoordinates = lo.value("XCoordinates").toArray();
+                        const int YCoordinate   = lo.value("YCoordinate").toInt();
+                        // m_scenePainter->drawText(xpos, ypos, Text);
+
+                        if (Text.size() != XCoordinates.size()) {
+                            qWarning()<<Q_FUNC_INFO<<"Text.size() != XCoordinates.size(), ignore XCoordinates";
+                            m_scenePainter->drawText(XCoordinates.at(0).toInt(), YCoordinate, Text);
+                        } else {
+                            for (int i=0; i<Text.size(); ++i) {
+                                // xpos += XCoordinates.at(i).toInt();
+                                m_scenePainter->drawText(XCoordinates.at(i).toInt(),
+                                                         YCoordinate + fm.ascent(),
+                                                         Text.at(i));
+                            }
+                        }
+                    }
+                }
+            }
 
 
 
@@ -692,6 +760,9 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
 
 
 
+
+
+            m_scenePainter->translate(-xpos,  -ypos);
         }
     }
 }
