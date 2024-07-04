@@ -607,6 +607,8 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
     if (Elements.isEmpty()) {
         return;
     }
+    auto DividingLines = node.value("DividingLines").toArray();
+
     for (const auto &it : Elements) {
         const auto object = it.toObject();
         if (object.isEmpty()) {
@@ -618,15 +620,18 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
         }
         const auto Body = object.value("Body").toObject();
         const auto Head = object.value("Head").toObject();
+        //TODO draw lines
+        const bool IsRenderDividingLine = object.value("IsRenderDividingLine").toBool();
 
         const auto FeedType = object.value("FeedType").toString();
         qDebug()<<Q_FUNC_INFO<<"FeedType "<<FeedType;
+
         if (FeedType == QLatin1StringView("GuardianCollectionFeed")) {
             const int space         = 80;
             const int XCoordinate   = Label.value("XCoordinate").toDouble();
             const int YCoordinate   = Label.value("YCoordinate").toDouble();
             const int Width         = m_pageSize.PageWidth - XCoordinate*2 + space;
-            const int Height        = object.value("Height").toDouble() + space*4;
+            const int Height        = object.value("Height").toDouble() + space*2;
 
             qDebug()<<Q_FUNC_INFO<<"[GuardianCollectionFeed] Height "<<Height
                      <<", Width "<<Width<<", XCoordinate "<<XCoordinate<<", YCoordinate "<<YCoordinate;
@@ -634,15 +639,15 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
             m_scenePainter->setPen(Qt::GlobalColor::white);
             m_scenePainter->setBrush(Qt::GlobalColor::red);
             m_scenePainter->drawRoundedRect(XCoordinate - space/2,
-                                            YCoordinate - space * 2,
+                                            YCoordinate - space,
                                             Width,
                                             Height,
                                             20, 20);
         }
+        if (FeedType == QLatin1StringView("GuardianTaskFeed")) {
+            //TODO  do nothing atm
+        }
 
-
-        // int xpos = 0;
-        // int ypos = 0;
         /** subject **/
         if (const auto Type = Label.value("Type").toString() == QLatin1StringView("subject")) {
             int xpos = Label.value("XCoordinate").toInt();
@@ -694,16 +699,20 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
             const int xpos = Label.value("XCoordinate").toDouble();
             const int ypos = Label.value("YCoordinate").toDouble();
 
-            //NOTE Background always !empty in this json file,so ignore null check
-            if (const auto Color = property.value("Background").toObject().value("Color").toString();
-                !Color.isEmpty()) {
-                m_scenePainter->setPen(QColor(Color));
-                m_scenePainter->setBrush(QColor(Color));
+            const auto Content = Label.value("Content").toString();
+
+            if (!Content.isEmpty()) {
+                //NOTE Background always !empty in this json file,so ignore null check
+                if (const auto Color = property.value("Background").toObject().value("Color").toString();
+                    !Color.isEmpty()) {
+                    m_scenePainter->setPen(QColor(Color));
+                    m_scenePainter->setBrush(QColor(Color));
+                }
+                m_scenePainter->drawRoundedRect(xpos, ypos,
+                                                Label.value("Width").toDouble(),
+                                                Label.value("Height").toDouble(),
+                                                10, 10);
             }
-            m_scenePainter->drawRoundedRect(xpos, ypos,
-                                            Label.value("Width").toDouble(),
-                                            Label.value("Height").toDouble(),
-                                            10, 10);
 
             m_scenePainter->translate(xpos, ypos);
 
@@ -713,7 +722,8 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
             //     m_scenePainter->drawRect(0, 0, 500, 500);
             // }
 
-            if (auto cr = Label.value("Content").toString().split("-"); cr.size() == 3) {
+            //draw date from label tag
+            if (auto cr = Content.split("-"); cr.size() == 3) {
                 m_scenePainter->setPen(Qt::GlobalColor::white);
                 m_scenePainter->setBrush(Qt::GlobalColor::white);
                 auto font = m_scenePainter->font();
@@ -736,7 +746,6 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                 const QString text = cr.join("/");
                 w = fm.horizontalAdvance(text);
                 x = (Label.value("Width").toInt() - w)/2;
-                // y = (y - fm.descent() + fm.height());
                 y += fm.ascent();
 
                 m_scenePainter->drawText(x, y, text);
@@ -817,6 +826,54 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                     }
                 }
             }
+            if (const auto Tag = Head.value("Tag").toObject(); !Tag.isEmpty()) {
+                if (const auto TagIcon = Tag.value("TagIcon").toObject(); !TagIcon.isEmpty()) {
+                    auto font = m_scenePainter->font();
+                    font.setPixelSize(TagIcon.value("Height").toDouble());
+                    m_scenePainter->setFont(font);
+                    QFontMetrics fm(font);
+
+                    const int TagType = TagIcon.value("TagType").toInt();
+                    if (TagType == 1) {
+                        m_scenePainter->drawText(TagIcon.value("XCoordinate").toDouble(),
+                                                 TagIcon.value("YCoordinate").toDouble() + fm.ascent(),
+                                                 "♥️");
+                    }
+                }
+                if (const auto TagText = Tag.value("TagText").toObject(); !TagText.isEmpty()) {
+                    if (const auto Lines = TagText.value("Lines").toArray(); !Lines.isEmpty()) {
+                        //TODO font size
+                        auto font = m_scenePainter->font();
+                        font.setPixelSize(48);
+                        m_scenePainter->setFont(font);
+
+                        QFontMetrics fm(font);
+
+                        for (const auto &l : Lines) {
+                            auto lo = l.toObject();
+                            if (lo.isEmpty()) {
+                                continue;
+                            }
+                            const auto Text         = lo.value("Text").toString();
+                            const auto XCoordinates = lo.value("XCoordinates").toArray();
+                            const int YCoordinate   = lo.value("YCoordinate").toInt();
+                            // m_scenePainter->drawText(xpos, ypos, Text);
+
+                            if (Text.size() != XCoordinates.size()) {
+                                qWarning()<<Q_FUNC_INFO<<"Text.size() != XCoordinates.size(), ignore XCoordinates";
+                                m_scenePainter->drawText(XCoordinates.at(0).toInt(), YCoordinate + fm.ascent(), Text);
+                            } else {
+                                for (int i=0; i<Text.size(); ++i) {
+                                    // xpos += XCoordinates.at(i).toInt();
+                                    m_scenePainter->drawText(XCoordinates.at(i).toInt(),
+                                                             YCoordinate + fm.ascent(),
+                                                             Text.at(i));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             if (const auto Content = Body.value("Content").toObject(); !Content.isEmpty()) {
                 auto font = m_scenePainter->font();
                 //TODO font size
@@ -866,8 +923,9 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                             if (QImage img; img.load(GET_FILE(obj.value("URL").toString()))) {
                                 const int Width         = obj.value("Width").toDouble();
                                 const int Height        = obj.value("Height").toDouble();
-                                const int XCoordinate  = obj.value("XCoordinate").toDouble();
+                                const int XCoordinate   = obj.value("XCoordinate").toDouble();
                                 const int YCoordinate   = obj.value("YCoordinate").toDouble();
+                                const int Rotation      = obj.value("Rotation").toDouble();
 
                                 // qDebug()<<Q_FUNC_INFO<<"file image, Height "<<Height
                                 //          <<", Width "<<Width<<", XCoordinate "<<XCoordinate<<", YCoordinate "<<YCoordinate;
@@ -879,14 +937,54 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                                 else if (img.height() > Height) {
                                     img = img.scaledToHeight(Height, Qt::SmoothTransformation);
                                 }
-                                m_scenePainter->drawImage(XCoordinate, YCoordinate, img);
+
+                                m_scenePainter->translate(XCoordinate + img.width()/2, YCoordinate + img.height()/2);
+                                m_scenePainter->rotate(Rotation);
+
+                                m_scenePainter->drawImage(-img.width()/2,  -img.height()/2, img);
+
+                                m_scenePainter->rotate(-Rotation);
+                                m_scenePainter->translate(-XCoordinate -img.width()/2 , -YCoordinate -img.height()/2);
+
+
+
+
+
+
+
+
+
+
                             }
                         }
                     }
                 }
             }
+            if (const auto Video = Body.value("Video").toObject(); !Video.isEmpty()) {
+                const int Width         = Video.value("Width").toDouble();
+                const int Height        = Video.value("Height").toDouble();
+                const int XCoordinate   = Video.value("XCoordinate").toDouble();
+                const int YCoordinate   = Video.value("YCoordinate").toDouble();
+                if (const auto Image = Video.value("Image").toObject(); !Image.isEmpty()) {
+                    if (QImage img; img.load(GET_FILE(Image.value("URL").toString()))) {
+                        const int w = Image.value("Width").toDouble();
+                        const int h = Image.value("Height").toDouble();
+                        const int xc = Image.value("XCoordinate").toDouble();
+                        const int yc = Image.value("YCoordinate").toDouble();
+                        img = img.scaled(w, h, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                        if (img.width() > w) {
+                            img = img.scaledToWidth(Width, Qt::SmoothTransformation);
+                        }
+                        else if (img.height() > h) {
+                            img = img.scaledToHeight(Height, Qt::SmoothTransformation);
+                        }
+                        m_scenePainter->drawImage(XCoordinate + xc, YCoordinate + yc, img);
+                    }
+                }
+                //TODO QR code
+            }
             m_scenePainter->translate(-xpos,  -ypos);
-        }
+        } //end feed
     }
 }
 
