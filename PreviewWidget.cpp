@@ -10,6 +10,7 @@
 #include <QCryptographicHash>
 #include <QApplication>
 #include <QtNumeric>
+#include <QtMath>
 
 #include <QPainter>
 #include <QPainterPath>
@@ -21,6 +22,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonValue>
+
 
 PreviewWidget::PreviewWidget(QWidget *parent)
     : QWidget{parent}
@@ -180,6 +182,11 @@ void PreviewWidget::drawPage(int pgNum)
 
     this->update();
 
+}
+
+int PreviewWidget::pageCount() const
+{
+    return m_pages.count();
 }
 
 void PreviewWidget::paintEvent(QPaintEvent *event)
@@ -999,6 +1006,63 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                 }
                 //TODO QR code
             }
+            if (const auto Template = Body.value("Template").toObject(); !Template.isEmpty()) {
+
+                const int Width         = Template.value("Width").toDouble();
+                const int Height        = Template.value("Height").toDouble();
+                const int XCoordinate   = Template.value("XCoordinate").toDouble();
+                const int YCoordinate   = Template.value("YCoordinate").toDouble();
+                const auto Type         = Template.value("Type").toString();
+                const auto SubType      = Template.value("SubType").toString();
+
+                if (Type == QLatin1StringView("VV")) {
+                    // m_scenePainter->setPen(Qt::GlobalColor::green);
+                    // m_scenePainter->setBrush(Qt::GlobalColor::green);
+                    // m_scenePainter->drawRect(XCoordinate, YCoordinate, Width, Height);
+                    //TODO add white backgroud for images
+
+                    int rotation = 5;
+                    int yoffset = 0;
+
+                    if (const auto Images = Template.value("Images").toArray(); !Images.isEmpty()) {
+
+                        for (const auto &it : Images) {
+                            if (const auto image = it.toObject(); !image.isEmpty()) {
+                                if (QImage img; img.load(GET_FILE(image.value("URL").toString()))) {
+                                    rotation = -rotation;
+                                    const int w = qMin(Width, (int)image.value("Width").toDouble());
+                                    const int h = qMin(Height, (int)image.value("Height").toDouble());
+                                    const int xc = image.value("XCoordinate").toDouble();
+                                    const int yc = image.value("YCoordinate").toDouble();
+                                    img = img.scaled(w, h, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                                    if (img.width() > w) {
+                                        img = img.scaledToWidth(Width, Qt::SmoothTransformation);
+                                    }
+                                    else if (img.height() > h) {
+                                        img = img.scaledToHeight(Height, Qt::SmoothTransformation);
+                                    }
+
+                                    m_scenePainter->translate(img.width()/2, img.height()/2);
+                                    m_scenePainter->rotate(rotation);
+                                    m_scenePainter->translate(-img.width()/2, -img.height()/2);
+                                    m_scenePainter->drawImage(xc, yc + yoffset, img);
+
+                                    //reset painter
+                                    m_scenePainter->translate(img.width()/2, img.height()/2);
+                                    m_scenePainter->rotate(-rotation);
+                                    m_scenePainter->translate(-img.width()/2, -img.height()/2);
+
+                                    yoffset += img.height() *3/5;
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+
+
             m_scenePainter->translate(-xpos,  -ypos);
         } //end feed
     }

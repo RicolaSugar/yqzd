@@ -18,8 +18,7 @@ public:
 
     void drawPage(int pgNum);
 
-
-
+    int pageCount() const;
 
     // QWidget interface
 protected:

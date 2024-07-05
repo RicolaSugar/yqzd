@@ -19,6 +19,9 @@ MainWindow::MainWindow(QWidget *parent)
     , m_outpathSelectBtn(new QPushButton)
     , m_dlBtn(new QPushButton)
     , m_previewBtn(new QPushButton)
+    , m_nextBtn(new QPushButton)
+    , m_previousBtn(new QPushButton)
+    , m_slider(new QSlider(Qt::Orientation::Horizontal))
     , m_dataSelLabel(new QLabel)
     , m_outpathSelLabel(new QLabel)
     , m_infoLabel(new QLabel)
@@ -31,6 +34,9 @@ MainWindow::MainWindow(QWidget *parent)
 {
     // this->setFixedSize(800, 800);
     m_previewWidget->setFixedSize(600, 800);
+
+    m_slider->setTickPosition(QSlider::TicksBothSides);
+    m_slider->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum);
 
     auto *vb = new QVBoxLayout;
     vb->setContentsMargins(10, 10, 10, 10);
@@ -52,12 +58,24 @@ MainWindow::MainWindow(QWidget *parent)
     vb->addWidget(m_previewBtn, 0, Qt::AlignLeft);
     vb->addStretch();
 
+    m_nextBtn->setText("Next >>");
+    vb->addWidget(m_nextBtn, 0, Qt::AlignLeft);
+    vb->addStretch();
+
+    m_previousBtn->setText("Previous <<");
+    vb->addWidget(m_previousBtn, 0, Qt::AlignLeft);
+    vb->addStretch();
+
     QHBoxLayout *hb = new QHBoxLayout;
     hb->addLayout(vb);
     hb->addWidget(m_previewWidget);
 
+    QVBoxLayout *vv = new QVBoxLayout;
+    vv->addWidget(m_slider);
+    vv->addLayout(hb);
+
     auto centralWidget = new QWidget;
-    centralWidget->setLayout(hb);
+    centralWidget->setLayout(vv);
     this->setCentralWidget(centralWidget);
 
     connect(m_dataSelectBtn, &QPushButton::clicked,
@@ -96,8 +114,31 @@ MainWindow::MainWindow(QWidget *parent)
         // w->load(m_datafile, m_outpath);
         // w->drawPage(0);
         // w->show();
-        m_previewWidget->load(m_datafile, m_outpath);
-        m_previewWidget->drawPage(30);
+        // m_previewWidget->load(m_datafile, m_outpath);
+        // m_previewWidget->drawPage(30);
+        if (m_previewWidget->load(m_datafile, m_outpath)) {
+            m_slider->setMaximum(m_previewWidget->pageCount());
+        }
+    });
+
+    connect(m_nextBtn, &QPushButton::clicked,
+            this, [=]() {
+        if (m_curPageNum == (m_previewWidget->pageCount()-1)) {
+            return;
+        }
+        m_curPageNum++;
+        m_previewWidget->drawPage(m_curPageNum);
+        m_slider->setValue(m_curPageNum);
+    });
+
+    connect(m_previousBtn, &QPushButton::clicked,
+            this, [=]() {
+        if (m_curPageNum == 0) {
+            return;
+        }
+        m_curPageNum--;
+        m_previewWidget->drawPage(m_curPageNum);
+        m_slider->setValue(m_curPageNum);
     });
 
     connect(m_mediaDL, &MediaDownloader::dlError,
@@ -108,6 +149,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_mediaDL, &MediaDownloader::downloadState,
             this, [=](const QString &msg) {
         m_infoLabel->setText(msg);
+    });
+
+    connect(m_slider, &QSlider::valueChanged,
+            this, [=](int value) {
+        if (m_curPageNum != value) {
+            m_curPageNum = value;
+            m_previewWidget->drawPage(value);
+        }
+        m_infoLabel->setText(QLatin1StringView("Page at ") + QString::number(value));
     });
 
 }

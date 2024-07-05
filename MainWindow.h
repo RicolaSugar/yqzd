@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QPushButton>
 #include <QLabel>
+#include <QSlider>
 
 class PreviewWidget;
 class MediaDownloader;
@@ -20,6 +21,10 @@ private:
     QPushButton *m_outpathSelectBtn = nullptr;
     QPushButton *m_dlBtn            = nullptr;
     QPushButton *m_previewBtn       = nullptr;
+    QPushButton *m_nextBtn          = nullptr;
+    QPushButton *m_previousBtn      = nullptr;
+    QSlider     *m_slider           = nullptr;
+
 
     QLabel      *m_dataSelLabel     = nullptr;
     QLabel      *m_outpathSelLabel  = nullptr;
@@ -28,6 +33,8 @@ private:
     PreviewWidget *m_previewWidget  = nullptr;
 
     MediaDownloader *m_mediaDL      = nullptr;
+
+    int     m_curPageNum            = 0;
 
     QString m_datafile;
     QString m_outpath;
