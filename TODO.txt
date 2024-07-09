@@ -1,4 +1,3 @@
 FIX LIST:
-pg ID 139(NO 138)
 pg ID 140(NO 141)
 pg ID 141(NO 142)

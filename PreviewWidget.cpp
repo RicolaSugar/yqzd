@@ -165,6 +165,9 @@ void PreviewWidget::drawPage(int pgNum)
         else if (Type == QLatin1StringView("subject")) {
             drawHybridSubject(root, Property);
         }
+        else if (Type == QLatin1StringView("physical-examination")) {
+            drawPhysicalExaminationPage(root, Property);
+        }
 
     }
 
@@ -1211,6 +1214,165 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
 void PreviewWidget::drawFeedPage(const QJsonObject &node, const QJsonObject &property)
 {
     drawHybridSubject(node, property);
+}
+
+void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const QJsonObject &property)
+{
+    const int xc = 700;
+    const int yc = 1000;
+    const QColor lineColor("#ff9c2b");
+    if (const auto Elements = node.value("Elements").toArray(); !Elements.isEmpty()) {
+        //NOTE only draw first node here
+        if (const auto obj = Elements.first().toObject(); !obj.isEmpty()) {
+            const auto Date     = obj.value("Date").toString();
+            const auto Headline = obj.value("Headline").toString();
+
+            const int lineW = 40;
+            const int lineH = 150;
+
+            int xpos = xc;
+            int ypos = yc;
+
+            m_scenePainter->setPen(lineColor);
+            m_scenePainter->setBrush(lineColor);
+            m_scenePainter->drawRect(xpos, ypos, lineW, lineH);
+
+            m_scenePainter->setPen(Qt::GlobalColor::black);
+            m_scenePainter->setBrush(Qt::GlobalColor::black);
+
+            auto font = m_scenePainter->font();
+            font.setPixelSize(72);
+            m_scenePainter->setFont(font);
+
+            QFontMetrics fm(font);
+
+            xpos += lineW + 30;
+
+            m_scenePainter->drawText(xpos, ypos + fm.ascent(), Headline);
+
+            ypos += fm.height() + 40;
+
+            font.setPixelSize(48);
+            m_scenePainter->setFont(font);
+            m_scenePainter->drawText(xpos, ypos, Date);
+
+            ypos += 100;
+
+            //📏,  ⚖, 👀,🩸,🦷
+            if (const auto Data = obj.value("Data").toObject(); !Date.isEmpty()) {
+                const int spcae = 120;
+                if (const auto height = Data.value("height").toObject(); !obj.empty()) {
+                    const QString Value = QString::number(height.value("Value").toDouble());
+                    m_scenePainter->drawText(xc, ypos, "📏");
+                    m_scenePainter->drawText(xc + 100, ypos, height.value("Name").toString());
+                    m_scenePainter->drawText(xc + 400, ypos, Value);
+                    m_scenePainter->drawText(xc + 400 + fm.horizontalAdvance(Value),
+                                             ypos,
+                                             height.value("Unit").toString());
+                    if (const auto Assessement = height.value("Assessement").toString(); Assessement.isEmpty()) {
+                        m_scenePainter->drawText(xc + 800, ypos, QLatin1StringView("/"));
+                    }
+                    else {
+                        m_scenePainter->drawText(xc + 800, ypos, height.value("Assessement").toString());
+                    }
+                }
+
+                ypos += spcae;
+                if (const auto weight = Data.value("weight").toObject(); !obj.empty()) {
+                    const QString Value = QString::number(weight.value("Value").toDouble());
+                    m_scenePainter->drawText(xc, ypos, "⚖");
+                    m_scenePainter->drawText(xc + 100, ypos, weight.value("Name").toString());
+                    m_scenePainter->drawText(xc + 400, ypos, Value);
+                    m_scenePainter->drawText(xc + 400 + fm.horizontalAdvance(Value),
+                                             ypos,
+                                             weight.value("Unit").toString());
+
+                    if (const auto Assessement = weight.value("Assessement").toString(); Assessement.isEmpty()) {
+                        m_scenePainter->drawText(xc + 800, ypos, QLatin1StringView("/"));
+                    }
+                    else {
+                        m_scenePainter->drawText(xc + 800, ypos, weight.value("Assessement").toString());
+                    }
+                }
+
+                ypos += spcae;
+                if (const auto leftEye = Data.value("leftEye").toObject(); !obj.empty()) {
+                    const QString Value = QString::number(leftEye.value("Value").toDouble());
+                    m_scenePainter->drawText(xc, ypos, "👀");
+                    m_scenePainter->drawText(xc + 100, ypos, leftEye.value("Name").toString());
+                    m_scenePainter->drawText(xc + 400, ypos, Value);
+                    // m_scenePainter->drawText(xc + 400 + fm.horizontalAdvance(Value),
+                    //                          ypos,
+                    //                          leftEye.value("Unit").toString());
+
+                    if (const auto Assessement = leftEye.value("Assessement").toString(); Assessement.isEmpty()) {
+                        m_scenePainter->drawText(xc + 800, ypos, QLatin1StringView("/"));
+                    }
+                    else {
+                        m_scenePainter->drawText(xc + 800, ypos, leftEye.value("Assessement").toString());
+                    }
+                }
+
+                ypos += spcae;
+                if (const auto rightEye = Data.value("rightEye").toObject(); !obj.empty()) {
+                    const QString Value = QString::number(rightEye.value("Value").toDouble());
+                    m_scenePainter->drawText(xc, ypos, "👀");
+                    m_scenePainter->drawText(xc + 100, ypos, rightEye.value("Name").toString());
+                    m_scenePainter->drawText(xc + 400, ypos, Value);
+                    // m_scenePainter->drawText(xc + 400 + fm.horizontalAdvance(Value),
+                    //                          ypos,
+                    //                          rightEye.value("Unit").toString());
+
+                    if (const auto Assessement = rightEye.value("Assessement").toString(); Assessement.isEmpty()) {
+                        m_scenePainter->drawText(xc + 800, ypos, QLatin1StringView("/"));
+                    }
+                    else {
+                        m_scenePainter->drawText(xc + 800, ypos, rightEye.value("Assessement").toString());
+                    }
+                }
+
+                ypos += spcae;
+                if (const auto heme = Data.value("heme").toObject(); !obj.empty()) {
+                    const QString Value = QString::number(heme.value("Value").toDouble());
+                    m_scenePainter->drawText(xc, ypos, "🩸");
+                    m_scenePainter->drawText(xc + 100, ypos, heme.value("Name").toString());
+                    m_scenePainter->drawText(xc + 400, ypos, Value);
+                    m_scenePainter->drawText(xc + 400 + fm.horizontalAdvance(Value),
+                                             ypos,
+                                             heme.value("Unit").toString());
+
+                    if (const auto Assessement = heme.value("Assessement").toString(); Assessement.isEmpty()) {
+                        m_scenePainter->drawText(xc + 800, ypos, QLatin1StringView("/"));
+                    }
+                    else {
+                        m_scenePainter->drawText(xc + 800, ypos, heme.value("Assessement").toString());
+                    }
+                }
+
+                ypos += spcae;
+                if (const auto caries = Data.value("caries").toObject(); !obj.empty()) {
+                    const QString Value = QString::number(caries.value("Value").toDouble());
+                    m_scenePainter->drawText(xc, ypos, "🦷");
+                    m_scenePainter->drawText(xc + 100, ypos, caries.value("Name").toString());
+                    m_scenePainter->drawText(xc + 400, ypos, Value);
+                    m_scenePainter->drawText(xc + 400 + fm.horizontalAdvance(Value),
+                                             ypos,
+                                             caries.value("Unit").toString());
+
+                    if (const auto Assessement = caries.value("Assessement").toString(); Assessement.isEmpty()) {
+                        m_scenePainter->drawText(xc + 800, ypos, QLatin1StringView("/"));
+                    }
+                    else {
+                        m_scenePainter->drawText(xc + 800, ypos, caries.value("Assessement").toString());
+                    }
+                }
+
+            }
+        }
+
+
+    }
+
 }
 
 void PreviewWidget::drawPagination(const QJsonObject &node)
