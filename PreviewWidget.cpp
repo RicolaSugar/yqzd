@@ -1493,14 +1493,163 @@ void PreviewWidget::drawEWishPage(const QJsonObject &node, const QJsonObject &pr
                     }
                 }
             }
+        }
+    }
+}
 
+void PreviewWidget::drawGraduationAudios(const QJsonObject &node, const QJsonObject &property)
+{
+    if (const auto Element = node.value("Element").toObject(); !Element.isEmpty()) {
+        if (const auto GraduationAudios = Element.value("GraduationAudios").toArray(); !GraduationAudios.isEmpty()) {
+            const int cellW = 700;
+            const int cellH = 900;
+            const int cSpace = 50;
+            const int cNum  = 3; //column nums
+            const int rNum  = 2; //row nums
+            const int avatarS = 280;
+            // const int startYpos = 600;
+            const QPoint sp((m_pageSize.PageWidth - cellW * cNum - cSpace *(cNum -2))/2,
+                            600);
+            int xpos = sp.x();
+            int ypos = sp.y();
 
+            qDebug()<<Q_FUNC_INFO<<"sp "<<sp;
 
+            for (int i=0; i<GraduationAudios.size(); ++i) {
+                const auto obj = GraduationAudios.at(i).toObject();
 
+#define ADD_POS \
+    do { \
+        if ((i+1) % cNum == 0) { \
+                xpos = sp.x(); \
+                ypos += cellH + cSpace; \
+        } else { \
+                xpos += cellW + cSpace; \
+        } \
+    } while (0);
 
+                if (obj.isEmpty()) {
+                    ADD_POS;
+                    continue;
+                }
+                const auto StudentName  = obj.value("StudentName").toString();
+                const auto Hobbies      = QString("爱好：%1").arg(obj.value("Hobbies").toString());
+                const auto StudentGender= obj.value("StudentGender").toInt(); //2 for girl
+                const auto AvatarURL    = obj.value("AvatarURL").toString();
 
+                QPixmap pm(cellW, cellH);
+                pm.fill(Qt::GlobalColor::transparent);
 
+                {
+                    QPainter p(&pm);
+                    p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
+                    QColor c = Qt::GlobalColor::white;
+                    c.setAlphaF(0.3);
+                    p.setBrush(c);
+                    p.setPen(c);
+                    p.drawRoundedRect(0, 0, cellW, cellH, 20, 20);
+                }
+                {
+                    QImage img;
+                    if (img.load(GET_FILE(AvatarURL))) {
+                        if (img.width() > avatarS) {
+                            img = img.scaledToWidth(avatarS, Qt::SmoothTransformation);
+                        }
+                        if (img.height() > avatarS) {
+                            img = img.scaledToHeight(avatarS, Qt::SmoothTransformation);
+                        }
+                        QPainter p;
+                        QPixmap pp(img.width(), img.height());
+                        pp.fill(Qt::GlobalColor::transparent);
+
+                        p.begin(&pp);
+                        p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+                        QPainterPath path;
+                        path.addEllipse(0, 0,
+                                        qMin(pp.width(), pp.height()),
+                                        qMin(pp.width(), pp.height()));
+                        p.setClipPath(path);
+                        p.drawImage(pp.rect(), img);
+                        p.end();
+
+                        p.begin(&pm);
+                        p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+                        p.drawPixmap(cSpace, cSpace, pp);
+                        p.end();
+                    }
+                }
+                {
+                    QPainter p(&pm);
+                    p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+                    p.setBrush(Qt::GlobalColor::white);
+                    p.setPen(Qt::GlobalColor::white);
+
+                    int x = avatarS + cSpace *2;
+                    int y = cSpace;
+                    auto font = p.font();
+                    font.setPixelSize(48);
+                    p.setFont(font);
+                    QFontMetrics fm(font);
+
+                    p.drawText(x, y + fm.ascent(), StudentName);
+
+                    y += fm.height() + cSpace;
+
+                    if (StudentGender == 2) { //girl
+                        p.setBrush(QColor("#ff79b1"));
+                        p.setPen(QColor("#ff79b1"));
+
+                        int w = fm.horizontalAdvance("♀") + 20;
+                        int h = fm.height() + 20;
+                        p.drawRoundedRect(x - 10,
+                                          y - 10,
+                                          w, h, 4, 4);
+
+                        p.setBrush(Qt::GlobalColor::white);
+                        p.setPen(Qt::GlobalColor::white);
+                        p.drawText(x, y + fm.ascent(), "♀");
+                    } else {
+                        p.setBrush(QColor("#6fc2ff"));
+                        p.setPen(QColor("#6fc2ff"));
+
+                        int w = fm.horizontalAdvance("♂") + 20;
+                        int h = fm.height() + 20;
+                        p.drawRoundedRect(x - 10,
+                                          y - 10,
+                                          w, h, 4, 4);
+
+                        p.setBrush(Qt::GlobalColor::white);
+                        p.setPen(Qt::GlobalColor::white);
+                        p.drawText(x, y + fm.ascent(), "♂");
+                    }
+                }
+
+                {
+                    QPainter p(&pm);
+                    p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+                    p.setBrush(Qt::GlobalColor::white);
+                    p.setPen(Qt::GlobalColor::white);
+
+                    int x = cSpace;
+                    int y = avatarS + cSpace *2;
+                    auto font = p.font();
+                    font.setPixelSize(48);
+                    p.setFont(font);
+                    // QFontMetrics fm(font);
+
+                    p.drawText(x,
+                               y,
+                               cellW - cSpace *2,
+                               120,
+                               Qt::AlignLeft | Qt::TextWordWrap,
+                               Hobbies);
+                }
+                //TODO QR code
+
+                m_scenePainter->drawPixmap(xpos, ypos, pm);
+                ADD_POS;
+            }
         }
     }
 }
