@@ -168,6 +168,12 @@ void PreviewWidget::drawPage(int pgNum)
         else if (Type == QLatin1StringView("physical-examination")) {
             drawPhysicalExaminationPage(root, Property);
         }
+        else if (Type == QLatin1StringView("e-wish")) {
+            drawEWishPage(root, Property);
+        }
+        else if (Type == QLatin1StringView("graduation-audios")) {
+            drawGraduationAudios(root, Property);
+        }
 
     }
 
@@ -1373,6 +1379,130 @@ void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const Q
 
     }
 
+}
+
+void PreviewWidget::drawEWishPage(const QJsonObject &node, const QJsonObject &property)
+{
+    if (const auto Elements = node.value("Elements").toArray(); !Elements.isEmpty()) {
+        for (const auto &ele : Elements) {
+            const auto obj = ele.toObject();
+            if (obj.isEmpty()) {
+                continue;
+            }
+            const auto Wish = obj.value("Wish").toObject();
+            if (Wish.isEmpty()) {
+                continue;
+            }
+            const auto XCoordinate  = obj.value("XCoordinate").toDouble();
+            const auto YCoordinate  = obj.value("YCoordinate").toDouble();
+            const auto Width        = Wish.value("Width").toDouble();
+            const auto Height       = Wish.value("Height").toDouble();
+            const auto bgXC       = XCoordinate + Wish.value("XCoordinate").toDouble();
+            const auto bgYC       = YCoordinate + Wish.value("YCoordinate").toDouble();
+
+            //draw bg
+            m_scenePainter->setPen(Qt::GlobalColor::white);
+            m_scenePainter->setBrush(Qt::GlobalColor::white);
+            m_scenePainter->drawRoundedRect(bgXC, bgYC, Width, Height, 20, 20);
+
+            if (const auto Stamp = Wish.value("Stamp").toObject(); !Stamp.isEmpty()) {
+                const auto sXC = Stamp.value("XCoordinate").toDouble();
+                const auto sYC = Stamp.value("YCoordinate").toDouble();
+                const int sW = 300;
+                const int sH = 100;
+
+                QColor color("#57b59f");
+                m_scenePainter->setPen(color);
+                m_scenePainter->setBrush(color);
+                m_scenePainter->drawRoundedRect(bgXC + sXC - 50,
+                                                bgYC + sYC,
+                                                sW, sH,
+                                                10, 10);
+
+                m_scenePainter->setPen(Qt::GlobalColor::white);
+                m_scenePainter->setBrush(Qt::GlobalColor::white);
+                auto font = m_scenePainter->font();
+                font.setPixelSize(48);
+                m_scenePainter->setFont(font);
+
+                QFontMetrics fm(font);
+
+                m_scenePainter->drawText(bgXC + sXC,
+                                         bgYC + sYC + sH/2 + fm.ascent()/2,
+                                         "老师的话");
+            }
+
+            m_scenePainter->setPen(Qt::GlobalColor::black);
+            m_scenePainter->setBrush(Qt::GlobalColor::black);
+            auto font = m_scenePainter->font();
+            font.setPixelSize(48);
+            m_scenePainter->setFont(font);
+
+            QFontMetrics fm(font);
+
+            if (const auto Label = Wish.value("Label").toObject(); !Label.isEmpty()) {
+                const auto Text = Label.value("Text").toString();
+                const auto lxc  = Label.value("XCoordinate").toDouble();
+                const auto lyc  = Label.value("YCoordinate").toDouble();
+
+                m_scenePainter->drawText(XCoordinate + lxc,
+                                         YCoordinate + lyc + fm.ascent() /*- fm.descent()*/,
+                                         Text);
+            }
+            if (const auto Signature = Wish.value("Signature").toObject(); !Signature.isEmpty()) {
+                if (const auto Line = Signature.value("Line").toObject(); !Line.isEmpty()) {
+                    const auto Text = Line.value("Text").toString();
+                    const auto lyc  = Line.value("YCoordinate").toDouble();
+                    const auto lxcs = Line.value("XCoordinates").toArray();
+
+                    if (Text.size() != lxcs.size()) {
+                        qWarning()<<Q_FUNC_INFO<<"[Content] Text.size() != XCoordinates.size(), ignore XCoordinates for text "<<Text;
+                        m_scenePainter->drawText(XCoordinate + lxcs.at(0).toDouble(),
+                                                 YCoordinate + lyc + fm.ascent(), Text);
+                    } else {
+                        for (int i=0; i<Text.size(); ++i) {
+                            m_scenePainter->drawText(XCoordinate + lxcs.at(i).toDouble(),
+                                                     YCoordinate + lyc + fm.ascent(),
+                                                     Text.at(i));
+                        }
+                    }
+                }
+            }
+            if (const auto Content = Wish.value("Content").toObject(); !Content.isEmpty()) {
+                if (const auto Lines = Content.value("Lines").toArray(); !Lines.isEmpty()) {
+                    for (const auto &l : Lines) {
+                        const auto lo = l.toObject();
+                        if (lo.isEmpty()) {
+                            continue;
+                        }
+                        const auto Text = lo.value("Text").toString();
+                        const auto lyc  = lo.value("YCoordinate").toDouble();
+                        const auto lxcs = lo.value("XCoordinates").toArray();
+
+                        if (Text.size() != lxcs.size()) {
+                            qWarning()<<Q_FUNC_INFO<<"[Content] Text.size() != XCoordinates.size(), ignore XCoordinates for text "<<Text;
+                            m_scenePainter->drawText(XCoordinate + lxcs.at(0).toDouble(),
+                                                     YCoordinate + lyc + fm.ascent(), Text);
+                        } else {
+                            for (int i=0; i<Text.size(); ++i) {
+                                m_scenePainter->drawText(XCoordinate + lxcs.at(i).toDouble(),
+                                                         YCoordinate + lyc + fm.ascent(),
+                                                         Text.at(i));
+                            }
+                        }
+                    }
+                }
+            }
+
+
+
+
+
+
+
+
+        }
+    }
 }
 
 void PreviewWidget::drawPagination(const QJsonObject &node)

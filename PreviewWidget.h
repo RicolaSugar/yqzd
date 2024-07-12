@@ -38,6 +38,8 @@ private:
     void drawHybridSubject(const QJsonObject &node, const QJsonObject &property);
     void drawFeedPage(const QJsonObject &node, const QJsonObject &property);
     void drawPhysicalExaminationPage(const QJsonObject &node, const QJsonObject &property);
+    void drawEWishPage(const QJsonObject &node, const QJsonObject &property);
+    void drawGraduationAudios(const QJsonObject &node, const QJsonObject &property);
 
 
     void drawPagination(const QJsonObject &node);
