@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/">
+        <file>yahei.ttf</file>
+        <file>yuanti.ttf</file>
+        <file>SourceHanSansCN-Normal.ttf</file>
+    </qresource>
+</RCC>

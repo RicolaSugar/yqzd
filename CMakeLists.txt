@@ -35,6 +35,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MediaDownloader.h MediaDownloader.cpp
         PreviewWidget.h PreviewWidget.cpp
         PropertyData.h PropertyData.cpp
+        font.qrc
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET yqzd APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

@@ -23,6 +23,19 @@
 #include <QJsonObject>
 #include <QJsonValue>
 
+#define FONT_YAHEI      QLatin1StringView("Microsoft YaHei")
+#define FONT_YUANTI     QLatin1StringView("ZhunYuan")
+#define FONT_HAN_SANS   QLatin1StringView("Source Han Sans CN Normal")
+
+
+#define GET_FILE(uri) \
+QString("%1/%2/%3.%4") \
+    .arg(m_mediaPath) \
+    .arg(m_curID) \
+    /*.arg(obj.uri().toUtf8().toBase64())*/ \
+    .arg(QCryptographicHash::hash(uri.toUtf8(), QCryptographicHash::Md5).toHex()) \
+    .arg(dotExtension(uri))
+
 
 PreviewWidget::PreviewWidget(QWidget *parent)
     : QWidget{parent}
@@ -34,14 +47,6 @@ PreviewWidget::~PreviewWidget()
 {
     qDebug()<<Q_FUNC_INFO<<"----------------";
 }
-
-#define GET_FILE(uri) \
-QString("%1/%2/%3.%4") \
-    .arg(m_mediaPath) \
-    .arg(m_curID) \
-    /*.arg(obj.uri().toUtf8().toBase64())*/ \
-    .arg(QCryptographicHash::hash(uri.toUtf8(), QCryptographicHash::Md5).toHex()) \
-    .arg(dotExtension(uri))
 
 bool PreviewWidget::load(const QString &jsonPath, const QString &mediaPath)
 {
@@ -283,6 +288,7 @@ void PreviewWidget::drawVersionPage(const QJsonObject &node)
             auto font = m_scenePainter->font();
             //TODO magic code for font size
             font.setPixelSize(112);
+            font.setFamily(FONT_HAN_SANS);
             m_scenePainter->setFont(font);
             m_scenePainter->drawText(xpos, ypos, Headline);
 
@@ -291,6 +297,7 @@ void PreviewWidget::drawVersionPage(const QJsonObject &node)
             w += xspace;
             //TODO magic code for font size
             font.setPixelSize(60);
+            font.setFamily(FONT_YUANTI);
             m_scenePainter->setFont(font);
             m_scenePainter->drawText(xpos + w, ypos, Subline);
         }
@@ -304,6 +311,7 @@ void PreviewWidget::drawVersionPage(const QJsonObject &node)
             auto font = m_scenePainter->font();
              //TODO magic code for font size
             font.setPixelSize(48);
+            font.setFamily(FONT_YUANTI);
             m_scenePainter->setFont(font);
             QFontMetrics fm(font);
 
@@ -361,6 +369,7 @@ void PreviewWidget::drawDirectoryPage(const QJsonObject &node)
                         font.setPixelSize(48);
                     }
                     if (Type != -1) {
+                        font.setFamily(FONT_YAHEI);
                         m_scenePainter->setFont(font);
                     }
 
@@ -417,6 +426,7 @@ void PreviewWidget::drawProfilePage(const QJsonObject &node)
         auto font         = m_scenePainter->font();
         //TODO font size
         font.setPixelSize(88);
+        font.setFamily(FONT_HAN_SANS);
         m_scenePainter->setFont(font);
         m_scenePainter->setPen(Qt::GlobalColor::white);
         m_scenePainter->drawText(1050, 1000, name);
@@ -424,6 +434,7 @@ void PreviewWidget::drawProfilePage(const QJsonObject &node)
         m_scenePainter->drawText(1050, 1000 + fm.height(), AgeStr);
 
         font.setPixelSize(60);
+        font.setFamily(FONT_YUANTI);
         m_scenePainter->setFont(font);
         m_scenePainter->setPen(QColor("#46e6b3"));
         m_scenePainter->drawText(xpos, 1450, "我的幼儿园");
@@ -500,6 +511,7 @@ void PreviewWidget::drawGraduationPhotoPage(const QJsonObject &node)
         QFont font = m_scenePainter->font();
         //TODO magic size for font
         font.setPixelSize(88);
+        font.setFamily(FONT_HAN_SANS);
         QFontMetrics fm(font);
 
         const int wDelta = m_pageSize.PageWidth - xpos - fm.height();
@@ -513,6 +525,7 @@ void PreviewWidget::drawGraduationPhotoPage(const QJsonObject &node)
         m_scenePainter->drawText(0, - fm.descent(), title);
 
         font.setPixelSize(48);
+        font.setFamily(FONT_YUANTI);
         m_scenePainter->setFont(font);
         m_scenePainter->setPen(QColor("#8d715f"));
         m_scenePainter->drawText(fm.horizontalAdvance(title) + space, - fm.descent(), subTitle);
@@ -724,7 +737,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                      <<", Width "<<Width<<", XCoordinate "<<XCoordinate<<", YCoordinate "<<YCoordinate;
 
             m_scenePainter->setPen(Qt::GlobalColor::white);
-            m_scenePainter->setBrush(Qt::GlobalColor::red);
+            m_scenePainter->setBrush(Qt::GlobalColor::white);
             m_scenePainter->drawRoundedRect(XCoordinate - space/2,
                                             YCoordinate - space,
                                             Width,
@@ -743,6 +756,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
             auto font = m_scenePainter->font();
             //TODO font size,
             font.setPixelSize(112);
+            font.setFamily(FONT_HAN_SANS);
             m_scenePainter->setFont(font);
 
             QFontMetrics fm(font);
@@ -785,6 +799,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                 auto font = m_scenePainter->font();
                 //TODO font size
                 font.setPixelSize(48);
+                font.setFamily(FONT_HAN_SANS);
                 m_scenePainter->setFont(font);
 
                 QFontMetrics fm(font);
@@ -860,6 +875,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                 m_scenePainter->setBrush(Qt::GlobalColor::white);
                 auto font = m_scenePainter->font();
                 font.setPixelSize(88);
+                font.setFamily(FONT_HAN_SANS);
                 m_scenePainter->setFont(font);
 
                 QFontMetrics fm(font);
@@ -872,6 +888,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                 y = fm.height();
 
                 font.setPixelSize(48);
+                font.setFamily(FONT_YUANTI);
                 fm = QFontMetrics(font);
                 m_scenePainter->setFont(font);
 
@@ -889,6 +906,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
             if (const auto Title = Head.value("Title").toObject(); !Title.isEmpty()) {
                 auto font = m_scenePainter->font();
                 font.setPixelSize(88);
+                font.setFamily(FONT_HAN_SANS);
                 m_scenePainter->setFont(font);
 
                 QFontMetrics fm(font);
@@ -932,6 +950,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                 auto font = m_scenePainter->font();
                 //TODO font size
                 font.setPixelSize(48);
+                font.setFamily(FONT_YUANTI);
                 m_scenePainter->setFont(font);
 
                 QFontMetrics fm(font);
@@ -947,11 +966,11 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                         const int YCoordinate   = lo.value("YCoordinate").toDouble();
                         if (Text.size() != XCoordinates.size()) {
                             qWarning()<<Q_FUNC_INFO<<"[Mark] Text.size() != XCoordinates.size(), ignore XCoordinates";
-                            m_scenePainter->drawText(XCoordinates.at(0).toDouble(), YCoordinate + fm.ascent(), Text);
+                            m_scenePainter->drawText(XCoordinates.at(0).toDouble(), YCoordinate + fm.height() + fm.descent(), Text);
                         } else {
                             for (int i=0; i<Text.size(); ++i) {
                                 m_scenePainter->drawText(XCoordinates.at(i).toDouble(),
-                                                         YCoordinate + fm.ascent(),
+                                                         YCoordinate + fm.height() + fm.descent(),
                                                          Text.at(i));
                             }
                         }
@@ -968,7 +987,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                     const int TagType = TagIcon.value("TagType").toInt();
                     if (TagType == 1) {
                         m_scenePainter->drawText(TagIcon.value("XCoordinate").toDouble(),
-                                                 TagIcon.value("YCoordinate").toDouble() + fm.ascent(),
+                                                 TagIcon.value("YCoordinate").toDouble() + fm.height(),
                                                  "♥️");
                     }
                 }
@@ -977,6 +996,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                         //TODO font size
                         auto font = m_scenePainter->font();
                         font.setPixelSize(48);
+                        font.setFamily(FONT_YUANTI);
                         m_scenePainter->setFont(font);
 
                         QFontMetrics fm(font);
@@ -993,12 +1013,14 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
 
                             if (Text.size() != XCoordinates.size()) {
                                 qWarning()<<Q_FUNC_INFO<<"Text.size() != XCoordinates.size(), ignore XCoordinates";
-                                m_scenePainter->drawText(XCoordinates.at(0).toDouble(), YCoordinate + fm.ascent(), Text);
+                                m_scenePainter->drawText(XCoordinates.at(0).toDouble(),
+                                                         YCoordinate + fm.height() + fm.descent(),
+                                                         Text);
                             } else {
                                 for (int i=0; i<Text.size(); ++i) {
                                     // xpos += XCoordinates.at(i).toInt();
                                     m_scenePainter->drawText(XCoordinates.at(i).toDouble(),
-                                                             YCoordinate + fm.ascent(),
+                                                             YCoordinate + fm.height() + fm.descent(),
                                                              Text.at(i));
                                 }
                             }
@@ -1010,6 +1032,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                 auto font = m_scenePainter->font();
                 //TODO font size
                 font.setPixelSize(48);
+                font.setFamily(FONT_YUANTI);
                 m_scenePainter->setFont(font);
 
                 QFontMetrics fm(font);
@@ -1248,6 +1271,7 @@ void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const Q
 
             auto font = m_scenePainter->font();
             font.setPixelSize(72);
+            font.setFamily(FONT_YAHEI);
             m_scenePainter->setFont(font);
 
             QFontMetrics fm(font);
@@ -1259,6 +1283,7 @@ void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const Q
             ypos += fm.height() + 40;
 
             font.setPixelSize(48);
+            font.setFamily(FONT_YUANTI);
             m_scenePainter->setFont(font);
             m_scenePainter->drawText(xpos, ypos, Date);
 
@@ -1423,6 +1448,7 @@ void PreviewWidget::drawEWishPage(const QJsonObject &node, const QJsonObject &pr
                 m_scenePainter->setBrush(Qt::GlobalColor::white);
                 auto font = m_scenePainter->font();
                 font.setPixelSize(48);
+                font.setFamily(FONT_YUANTI);
                 m_scenePainter->setFont(font);
 
                 QFontMetrics fm(font);
@@ -1436,6 +1462,7 @@ void PreviewWidget::drawEWishPage(const QJsonObject &node, const QJsonObject &pr
             m_scenePainter->setBrush(Qt::GlobalColor::black);
             auto font = m_scenePainter->font();
             font.setPixelSize(48);
+            font.setFamily(FONT_YUANTI);
             m_scenePainter->setFont(font);
 
             QFontMetrics fm(font);
@@ -1662,6 +1689,8 @@ void PreviewWidget::drawPagination(const QJsonObject &node)
     QFont font              = m_scenePainter->font();
     int ypos                = m_pageSize.PageHeight - m_pagination.DTBottomDistance;
 
+    font.setFamily(FONT_YAHEI);
+
     m_scenePainter->setPen(Qt::GlobalColor::black);
     m_scenePainter->setBrush(Qt::GlobalColor::black);
     if (Location == 1) { //left
@@ -1792,6 +1821,7 @@ void PreviewWidget::drawTemplateElement(const QJsonObject &node)
         auto font = m_scenePainter->font();
         //TODO mageic size of font
         font.setPixelSize(56);
+        font.setFamily(FONT_YAHEI);
         m_scenePainter->setFont(font);
 
        m_scenePainter->drawText(xpos, m_sceneImg->height() /2,
@@ -1839,10 +1869,6 @@ void PreviewWidget::drawTemplateElement(const QJsonObject &node)
     if (!KindergartenName.isEmpty()) {
         m_scenePainter->drawText(QPoint(xpos + logoImg.width() + space, ypos), KindergartenName);
     }
-
-
-
-
 }
 
 QString PreviewWidget::dotExtension(const QString &uri)
