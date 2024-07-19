@@ -24,7 +24,7 @@
 #include <QJsonValue>
 
 #define FONT_YAHEI      QLatin1StringView("Microsoft YaHei")
-#define FONT_YUANTI     QLatin1StringView("ZhunYuan")
+#define FONT_YUANTI     QLatin1StringView("HYZhongYuanJ")
 #define FONT_HAN_SANS   QLatin1StringView("Source Han Sans CN Normal")
 
 
