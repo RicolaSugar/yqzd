@@ -23,6 +23,10 @@
 #include <QJsonObject>
 #include <QJsonValue>
 
+#include "BarcodeFormat.h"
+#include "BitMatrix.h"
+#include "MultiFormatWriter.h"
+
 #define FONT_YAHEI      QLatin1StringView("Microsoft YaHei")
 #define FONT_YUANTI     QLatin1StringView("HYZhongYuanJ")
 #define FONT_HAN_SANS   QLatin1StringView("Source Han Sans CN Normal")
@@ -204,6 +208,27 @@ void PreviewWidget::drawPage(int pgNum)
 int PreviewWidget::pageCount() const
 {
     return m_pages.count();
+}
+
+QImage PreviewWidget::generateBarcode(const QString &text, int width, int height, QColor foreground, QColor background)
+{
+    auto format = ZXing::BarcodeFormatFromString("QRCode");
+
+    //To draw image on QR Code use maximum level of ecc. Setting it to 8.
+    auto writer = ZXing::MultiFormatWriter(format).setEccLevel(8);
+    auto matrix = writer.encode(text.toStdString(), width, height);
+    QImage img(width, height, QImage::Format_ARGB32);
+
+    for (int y = 0; y < width; ++y) {
+        for (int x = 0; x < height; ++x) {
+            if (matrix.get(x, y)) {
+                img.setPixelColor(x, y, foreground);
+            } else {
+                img.setPixelColor(x, y, background);
+            }
+        }
+    }
+    return img;
 }
 
 void PreviewWidget::paintEvent(QPaintEvent *event)

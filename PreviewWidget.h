@@ -20,6 +20,10 @@ public:
 
     int pageCount() const;
 
+    QImage generateBarcode(const QString &text, int width, int height,
+                           QColor foreground = Qt::black,
+                           QColor background = Qt::white);
+
     // QWidget interface
 protected:
     virtual void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
