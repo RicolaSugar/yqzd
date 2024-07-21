@@ -34,14 +34,21 @@
 #define FONT_HAN_SANS   QLatin1StringView("Source Han Sans CN Normal")
 
 
-#define GET_FILE(uri) \
-QString("%1/%2/%3.%4") \
-    .arg(m_mediaPath) \
-    .arg(m_curID) \
-    /*.arg(obj.uri().toUtf8().toBase64())*/ \
-    .arg(QCryptographicHash::hash(uri.toUtf8(), QCryptographicHash::Md5).toHex()) \
-    .arg(dotExtension(uri))
-
+#if (MEDIA_PATH_SEPARATE_BY_ID)
+    #define GET_FILE(uri) \
+    QString("%1/%2/%3.%4") \
+        .arg(m_mediaPath) \
+        .arg(m_curID) \
+        /*.arg(obj.uri().toUtf8().toBase64())*/ \
+        .arg(QCryptographicHash::hash(uri.toUtf8(), QCryptographicHash::Md5).toHex()) \
+        .arg(dotExtension(uri))
+#else
+    #define GET_FILE(uri) \
+    QString("%1/%2.%3") \
+        .arg(m_mediaPath) \
+        .arg(QCryptographicHash::hash(uri.toUtf8(), QCryptographicHash::Md5).toHex()) \
+        .arg(dotExtension(uri))
+#endif
 
 PreviewWidget::PreviewWidget(QWidget *parent)
     : QWidget{parent}

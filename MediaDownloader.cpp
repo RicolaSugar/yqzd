@@ -19,6 +19,8 @@
 #include <QNetworkRequest>
 #include <QNetworkReply>
 
+#include "YQZDGlobal.h"
+
 const static int DL_MAX_CNT = 5;
 
 class MediaObjectPriv : public QSharedData
@@ -352,9 +354,13 @@ void MediaDownloader::processDownload()
                         }
                         return;
                     }
-
+#if (MEDIA_PATH_SEPARATE_BY_ID)
                     QDir dir(QString("%1/%2").arg(obj.path()).arg(obj.id()));
                     if (!dir.exists() && !dir.mkpath(QString("%1/%2").arg(obj.path()).arg(obj.id()))) {
+#else
+                    QDir dir(obj.path());
+                    if (!dir.exists() && !dir.mkpath(obj.path())) {
+#endif
                         qDebug()<<Q_FUNC_INFO<<"mk dir error";
                         reply->deleteLater();
                         return;
@@ -365,12 +371,19 @@ void MediaDownloader::processDownload()
                         }
                         return QString();
                     };
+#if (MEDIA_PATH_SEPARATE_BY_ID)
                     auto fName = QString("%1/%2/%3.%4")
                                      .arg(obj.path())
                                      .arg(obj.id())
                                      // .arg(obj.uri().toUtf8().toBase64())
                                      .arg(QCryptographicHash::hash(obj.uri().toUtf8(), QCryptographicHash::Md5).toHex())
                                      .arg(tag(obj.uri()));
+#else
+                    auto fName = QString("%1/%2.%3")
+                                     .arg(obj.path())
+                                     .arg(QCryptographicHash::hash(obj.uri().toUtf8(), QCryptographicHash::Md5).toHex())
+                                     .arg(tag(obj.uri()));
+#endif
 
                     qDebug()<<Q_FUNC_INFO<<"save to "<<fName;
 
