@@ -23,6 +23,8 @@
 #include <QJsonObject>
 #include <QJsonValue>
 
+#include "PrivateURI.h"
+
 #include "BarcodeFormat.h"
 #include "BitMatrix.h"
 #include "MultiFormatWriter.h"
@@ -671,7 +673,16 @@ void PreviewWidget::drawGraduationMoviePaget(const QJsonObject &node)
                 m_scenePainter->drawImage(xpos, ypos, img);
             }
         }
-        //TODO add QR code
+        if (const auto OrginURL = Element.value("OrginURL").toString(); !OrginURL.isEmpty()) {
+            const int ypos  = 2000;
+            const int qrs   = 400;
+            const int xpos  = (m_pageSize.PageWidth - qrs)/2;
+            const auto uri  = QCryptographicHash::hash(OrginURL.toUtf8(), QCryptographicHash::Md5).toHex();
+            const auto text = QString("%1/%2.%3?inline=true").arg(BARCODE_MEDIA_URI).arg(uri).arg(dotExtension(OrginURL));
+
+            auto img = generateBarcode(text, qrs, qrs);
+            m_scenePainter->drawImage(xpos, ypos, img);
+        }
     }
 }
 
