@@ -24,6 +24,8 @@ public:
                            QColor foreground = Qt::black,
                            QColor background = Qt::white);
 
+    QString generateBarcodeText(const QString &uri) const;
+
     // QWidget interface
 protected:
     virtual void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
@@ -53,7 +55,7 @@ private:
     void drawTemplateElement(const QJsonObject &node);
 
 private:
-    QString dotExtension(const QString &uri);
+    QString dotExtension(const QString &uri) const;
 
 private:
     QImage *m_sceneImg = nullptr;

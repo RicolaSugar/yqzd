@@ -3,5 +3,13 @@
         <file>yahei.ttf</file>
         <file>yuanti.ttf</file>
         <file>SourceHanSansCN-Normal.ttf</file>
+        <file>V-QR-1.png</file>
+        <file>V-QR-2.png</file>
+        <file>V-QR-3.png</file>
+        <file>layout_vv_type_one_left.png</file>
+        <file>layout_vv_type_one_right.png</file>
+        <file>V-QR-4.png</file>
+        <file>layout_vv_type_two_left.png</file>
+        <file>layout_vv_type_two_right.png</file>
     </qresource>
 </RCC>

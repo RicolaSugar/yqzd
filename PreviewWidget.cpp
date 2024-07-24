@@ -240,6 +240,15 @@ QImage PreviewWidget::generateBarcode(const QString &text, int width, int height
     return img;
 }
 
+QString PreviewWidget::generateBarcodeText(const QString &uri) const
+{
+    if (uri.isEmpty()) {
+        return QString();
+    }
+    const auto u = QCryptographicHash::hash(uri.toUtf8(), QCryptographicHash::Md5).toHex();
+    return QString("%1/%2.%3?inline=true").arg(BARCODE_MEDIA_URI).arg(u).arg(dotExtension(uri));
+}
+
 void PreviewWidget::paintEvent(QPaintEvent *event)
 {
     if (!m_sceneImg) {
@@ -879,11 +888,11 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                     }
                 }
             }
-
-
-
-
         } /** end subject **/
+
+        /****************************
+         *
+         ***************************/
 
         if (const auto Type = Label.value("Type").toString() == QLatin1StringView("feed")) {
             const int xpos = Label.value("XCoordinate").toDouble();
@@ -923,7 +932,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
 
                 QFontMetrics fm(font);
                 int w = fm.horizontalAdvance(cr.at(2));
-                int x = (Label.value("Width").toInt() - w)/2;
+                int x = (Label.value("Width").toDouble() - w)/2;
                 int y = fm.ascent();
 
                 m_scenePainter->drawText(x, y, cr.takeLast());
@@ -1190,9 +1199,64 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                             img = img.scaledToHeight(Height, Qt::SmoothTransformation);
                         }
                         m_scenePainter->drawImage(XCoordinate + xc, YCoordinate + yc, img);
+
+                        if (const auto QRcode = Video.value("QRcode").toObject(); !QRcode.isEmpty()) {
+                            const int w         = QRcode.value("Width").toDouble();
+                            const int h         = QRcode.value("Height").toDouble();
+                            const auto tp       = QRcode.value("Type").toString();
+                            const int qrxc      = QRcode.value("XCoordinate").toDouble();
+                            // const int yc    = QRcode.value("YCoordinate").toDouble();
+                            const auto uri      = QRcode.value("OriginURL").toString();
+                            const auto margin   = (tp == QLatin1StringView("V-QR-1")) ? 80 : 20;
+                            const auto fc       = property.value("Background").toObject()
+                                                .value("Color").toString();
+
+                            if (QImage qrbg; qrbg.load(QString(":/%1.png").arg(tp))) {
+                                auto qr = generateBarcode(generateBarcodeText(uri),
+                                                          w, h,
+                                                          QColor::isValidColorName(fc) ? QColor::fromString(fc) : Qt::black);
+                                QPixmap pm(qrbg.width(), qrbg.height());
+                                pm.fill(Qt::GlobalColor::transparent);
+
+                                QPainter p(&pm);
+                                p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+
+                                p.drawImage(0, 0, qrbg);
+                                p.drawImage((qrbg.width() - qr.width())/2,
+                                            qrbg.height() - qr.height() - margin,
+                                            qr);
+                                // AlignBottom of image part
+                                m_scenePainter->drawPixmap(qrxc,
+                                                           YCoordinate + yc + img.height() - qrbg.height() ,
+                                                           pm);
+                            }
+                        }
+                        if (const auto QRcode = Head.value("QRcode").toObject(); !QRcode.isEmpty()) {
+
+                            qDebug()<<Q_FUNC_INFO<<"----------------- qrcode in head";
+
+                            if (const auto VideoUri = Image.value("VideoUri").toString(); !VideoUri.isEmpty()) {
+
+                                qDebug()<<Q_FUNC_INFO<<"----------------- qrcode in head, VideoUri "<<VideoUri;
+
+                                const int w     = QRcode.value("Width").toDouble();
+                                const int h     = QRcode.value("Height").toDouble();
+                                const int qrxc  = QRcode.value("XCoordinate").toDouble();
+                                const int qryc  = QRcode.value("YCoordinate").toDouble();
+                                const auto fc   = property.value("Background").toObject()
+                                                    .value("Color").toString();
+
+                                auto qr = generateBarcode(generateBarcodeText(VideoUri),
+                                                          w, h,
+                                                          QColor::isValidColorName(fc) ? QColor::fromString(fc) : Qt::black);
+
+                                qDebug()<<Q_FUNC_INFO<<"--- --- qrcode in head, qr "<<qr
+                                         <<", qrxc "<<qrxc<<", qryc "<<qryc;
+                                m_scenePainter->drawImage(qrxc, qryc, qr);
+                            }
+                        }
                     }
                 }
-                //TODO QR code
             }
             if (const auto Template = Body.value("Template").toObject(); !Template.isEmpty()) {
 
@@ -1204,13 +1268,26 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                 const auto SubType      = Template.value("SubType").toString();
 
                 if (Type == QLatin1StringView("VV")) {
-                    // m_scenePainter->setPen(Qt::GlobalColor::green);
-                    // m_scenePainter->setBrush(Qt::GlobalColor::green);
-                    // m_scenePainter->drawRect(XCoordinate, YCoordinate, Width, Height);
-                    //TODO add white backgroud for images
-
                     int rotation = 5;
                     int yoffset = 0;
+                    if (SubType == QLatin1StringView("VV-1")) {
+                        //(1200, 800), (560,2200)
+                        if (QImage img; img.load(":/layout_vv_type_one_right.png")) {
+                            m_scenePainter->drawImage(1200 - xpos, 600 - ypos, img);
+                        }
+                        if (QImage img; img.load(":/layout_vv_type_one_left.png")) {
+                            m_scenePainter->drawImage(560 - xpos, 2000 - ypos, img);
+                        }
+                    }
+                    if (SubType == QLatin1StringView("VV-2")) {
+                        //(1200, 800), (560,2200)
+                        if (QImage img; img.load(":/layout_vv_type_two_right.png")) {
+                            m_scenePainter->drawImage(1250 - xpos, 750 - ypos, img);
+                        }
+                        if (QImage img; img.load(":/layout_vv_type_two_left.png")) {
+                            m_scenePainter->drawImage(500 - xpos, 2200 - ypos, img);
+                        }
+                    }
 
                     if (const auto Images = Template.value("Images").toArray(); !Images.isEmpty()) {
 
@@ -1268,7 +1345,6 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                                     m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
 #endif
                                     yoffset += img.height() *3/5;
-
                                 }
                             }
                         }
@@ -1606,6 +1682,7 @@ void PreviewWidget::drawGraduationAudios(const QJsonObject &node, const QJsonObj
                 const auto Hobbies      = QString("爱好：%1").arg(obj.value("Hobbies").toString());
                 const auto StudentGender= obj.value("StudentGender").toInt(); //2 for girl
                 const auto AvatarURL    = obj.value("AvatarURL").toString();
+                const auto OriginAudioURL = obj.value("OriginAudioURL").toString();
 
                 QPixmap pm(cellW, cellH);
                 pm.fill(Qt::GlobalColor::transparent);
@@ -1694,7 +1771,6 @@ void PreviewWidget::drawGraduationAudios(const QJsonObject &node, const QJsonObj
                         p.drawText(x, y + fm.ascent(), "♂");
                     }
                 }
-
                 {
                     QPainter p(&pm);
                     p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
@@ -1715,8 +1791,17 @@ void PreviewWidget::drawGraduationAudios(const QJsonObject &node, const QJsonObj
                                Qt::AlignLeft | Qt::TextWordWrap,
                                Hobbies);
                 }
-                //TODO QR code
-
+                {
+                    const int  s  = (cellW - cSpace*2) *2/5;
+                    const auto qr = generateBarcode(generateBarcodeText(OriginAudioURL),
+                                                    s, s,
+                                                    QColor("#102a86"));
+                    QPainter p(&pm);
+                    p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+                    p.drawImage(cellW - cSpace - qr.width(),
+                                cellH - cSpace - qr.height(),
+                                qr);
+                }
                 m_scenePainter->drawPixmap(xpos, ypos, pm);
                 ADD_POS;
             }
@@ -1914,13 +1999,14 @@ void PreviewWidget::drawTemplateElement(const QJsonObject &node)
     }
 }
 
-QString PreviewWidget::dotExtension(const QString &uri)
+QString PreviewWidget::dotExtension(const QString &uri) const
 {
-    if (int idx = uri.lastIndexOf("."); idx >=0) {
-        return uri.sliced(idx+1);
-    }
-    return QString();
+        if (int idx = uri.lastIndexOf("."); idx >=0) {
+            return uri.sliced(idx+1);
+        }
+        return QString();
 }
+
 
 
 
