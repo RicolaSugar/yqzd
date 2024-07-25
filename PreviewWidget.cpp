@@ -1421,7 +1421,7 @@ void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const Q
             //📏,  ⚖, 👀,🩸,🦷
             if (const auto Data = obj.value("Data").toObject(); !Date.isEmpty()) {
                 const int spcae = 120;
-                if (const auto height = Data.value("height").toObject(); !obj.empty()) {
+                if (const auto height = Data.value("height").toObject(); !height.empty()) {
                     const QString Value = QString::number(height.value("Value").toDouble());
                     m_scenePainter->drawText(xc, ypos, "📏");
                     m_scenePainter->drawText(xc + 100, ypos, height.value("Name").toString());
@@ -1438,7 +1438,7 @@ void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const Q
                 }
 
                 ypos += spcae;
-                if (const auto weight = Data.value("weight").toObject(); !obj.empty()) {
+                if (const auto weight = Data.value("weight").toObject(); !weight.empty()) {
                     const QString Value = QString::number(weight.value("Value").toDouble());
                     m_scenePainter->drawText(xc, ypos, "⚖");
                     m_scenePainter->drawText(xc + 100, ypos, weight.value("Name").toString());
@@ -1456,7 +1456,7 @@ void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const Q
                 }
 
                 ypos += spcae;
-                if (const auto leftEye = Data.value("leftEye").toObject(); !obj.empty()) {
+                if (const auto leftEye = Data.value("leftEye").toObject(); !leftEye.empty()) {
                     const QString Value = QString::number(leftEye.value("Value").toDouble());
                     m_scenePainter->drawText(xc, ypos, "👀");
                     m_scenePainter->drawText(xc + 100, ypos, leftEye.value("Name").toString());
@@ -1474,7 +1474,7 @@ void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const Q
                 }
 
                 ypos += spcae;
-                if (const auto rightEye = Data.value("rightEye").toObject(); !obj.empty()) {
+                if (const auto rightEye = Data.value("rightEye").toObject(); !rightEye.empty()) {
                     const QString Value = QString::number(rightEye.value("Value").toDouble());
                     m_scenePainter->drawText(xc, ypos, "👀");
                     m_scenePainter->drawText(xc + 100, ypos, rightEye.value("Name").toString());
@@ -1492,7 +1492,7 @@ void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const Q
                 }
 
                 ypos += spcae;
-                if (const auto heme = Data.value("heme").toObject(); !obj.empty()) {
+                if (const auto heme = Data.value("heme").toObject(); !heme.empty()) {
                     const QString Value = QString::number(heme.value("Value").toDouble());
                     m_scenePainter->drawText(xc, ypos, "🩸");
                     m_scenePainter->drawText(xc + 100, ypos, heme.value("Name").toString());
@@ -1510,7 +1510,7 @@ void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const Q
                 }
 
                 ypos += spcae;
-                if (const auto caries = Data.value("caries").toObject(); !obj.empty()) {
+                if (const auto caries = Data.value("caries").toObject(); !caries.empty()) {
                     const QString Value = QString::number(caries.value("Value").toDouble());
                     m_scenePainter->drawText(xc, ypos, "🦷");
                     m_scenePainter->drawText(xc + 100, ypos, caries.value("Name").toString());
@@ -1526,11 +1526,8 @@ void PreviewWidget::drawPhysicalExaminationPage(const QJsonObject &node, const Q
                         m_scenePainter->drawText(xc + 800, ypos, caries.value("Assessement").toString());
                     }
                 }
-
             }
         }
-
-
     }
 
 }
