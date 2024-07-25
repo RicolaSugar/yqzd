@@ -23,6 +23,7 @@ private:
     QPushButton *m_previewBtn       = nullptr;
     QPushButton *m_nextBtn          = nullptr;
     QPushButton *m_previousBtn      = nullptr;
+    QPushButton *m_saveBtn          = nullptr;
     QSlider     *m_slider           = nullptr;
 
 

@@ -138,78 +138,7 @@ bool PreviewWidget::load(const QString &jsonPath, const QString &mediaPath)
 
 void PreviewWidget::drawPage(int pgNum)
 {
-    if (pgNum > m_pages.size()) {
-        qDebug()<<Q_FUNC_INFO<<"Invalid pgNum "<<pgNum<<", total size "<<m_pages.size();
-        return;
-    }
-    // m_curID = pgNum;
-    auto root = m_pages.at(pgNum).toObject();
-    m_curID = root.value("ID").toInt(-1);
-
-    if (auto Property = root.value("Property").toObject(); !Property.isEmpty()) {
-        drawBackground(Property);
-
-        const auto Type = Property.value("Type").toString();
-
-        qDebug()<<Q_FUNC_INFO<<"type "<<Type;
-
-        if (Type == QLatin1StringView("intro")) {
-            drawIntroPage(root);
-        }
-        else if (Type == QLatin1StringView("version")) {
-            drawVersionPage(root);
-        }
-        else if (Type == QLatin1StringView("directory")) {
-            drawDirectoryPage(root);
-        }
-        else if (Type == QLatin1StringView("profile")) {
-            drawProfilePage(root);
-        }
-        else if (Type == QLatin1StringView("graduation-photo")) {
-            drawGraduationPhotoPage(root);
-        }
-        else if (Type == QLatin1StringView("graduation-movie")) {
-            drawGraduationMoviePaget(root);
-        }
-        else if (Type == QLatin1StringView("graduation-dream")) {
-            drawGraduationDreamPage(root);
-        }
-        else if (Type == QLatin1StringView("hybrid-subject")) {
-            drawHybridSubject(root, Property);
-        }
-        else if (Type == QLatin1StringView("feed")) {
-            drawFeedPage(root, Property);
-        }
-        else if (Type == QLatin1StringView("subject")) {
-            drawHybridSubject(root, Property);
-        }
-        else if (Type == QLatin1StringView("physical-examination")) {
-            drawPhysicalExaminationPage(root, Property);
-        }
-        else if (Type == QLatin1StringView("e-wish")) {
-            drawEWishPage(root, Property);
-        }
-        else if (Type == QLatin1StringView("graduation-audios")) {
-            drawGraduationAudios(root, Property);
-        }
-
-    }
-
-    if (const auto Pagination = root.value("Pagination").toObject(); !Pagination.isEmpty()) {
-        drawPagination(Pagination);
-    }
-
-
-
-
-    // drawBackground(root);
-
-    // if (auto ele = root.value("Element").toObject(); !ele.isEmpty()) {
-    //     drawElement(ele);
-    // }
-
-
-
+    this->renderToImage(pgNum);
     this->update();
 
 }
@@ -217,6 +146,24 @@ void PreviewWidget::drawPage(int pgNum)
 int PreviewWidget::pageCount() const
 {
     return m_pages.count();
+}
+
+void PreviewWidget::save(int pgNum, const QString &path)
+{
+    if (!path.isEmpty()) {
+        QDir dir;
+        dir.mkdir(path);
+    }
+    this->renderToImage(pgNum);
+    if (path.isEmpty()) {
+        m_sceneImg->save(QString("%1/%2.jpg").arg(qApp->applicationDirPath()).arg(pgNum),
+                         "JPG",
+                         100);
+    } else {
+        m_sceneImg->save(QString("%1/%2.jpg").arg(path).arg(pgNum),
+                         "JPG",
+                         100);
+    }
 }
 
 QImage PreviewWidget::generateBarcode(const QString &text, int width, int height, QColor foreground, QColor background)
@@ -300,6 +247,69 @@ bool PreviewWidget::parseProperty(const QJsonObject &obj)
         }
     }
     return true;
+}
+
+void PreviewWidget::renderToImage(int pgNum)
+{
+    if (pgNum > m_pages.size()) {
+        qDebug()<<Q_FUNC_INFO<<"Invalid pgNum "<<pgNum<<", total size "<<m_pages.size();
+        return;
+    }
+    // m_curID = pgNum;
+    auto root = m_pages.at(pgNum).toObject();
+    m_curID = root.value("ID").toInt(-1);
+
+    if (auto Property = root.value("Property").toObject(); !Property.isEmpty()) {
+        drawBackground(Property);
+
+        const auto Type = Property.value("Type").toString();
+
+        qDebug()<<Q_FUNC_INFO<<"type "<<Type;
+
+        if (Type == QLatin1StringView("intro")) {
+            drawIntroPage(root);
+        }
+        else if (Type == QLatin1StringView("version")) {
+            drawVersionPage(root);
+        }
+        else if (Type == QLatin1StringView("directory")) {
+            drawDirectoryPage(root);
+        }
+        else if (Type == QLatin1StringView("profile")) {
+            drawProfilePage(root);
+        }
+        else if (Type == QLatin1StringView("graduation-photo")) {
+            drawGraduationPhotoPage(root);
+        }
+        else if (Type == QLatin1StringView("graduation-movie")) {
+            drawGraduationMoviePaget(root);
+        }
+        else if (Type == QLatin1StringView("graduation-dream")) {
+            drawGraduationDreamPage(root);
+        }
+        else if (Type == QLatin1StringView("hybrid-subject")) {
+            drawHybridSubject(root, Property);
+        }
+        else if (Type == QLatin1StringView("feed")) {
+            drawFeedPage(root, Property);
+        }
+        else if (Type == QLatin1StringView("subject")) {
+            drawHybridSubject(root, Property);
+        }
+        else if (Type == QLatin1StringView("physical-examination")) {
+            drawPhysicalExaminationPage(root, Property);
+        }
+        else if (Type == QLatin1StringView("e-wish")) {
+            drawEWishPage(root, Property);
+        }
+        else if (Type == QLatin1StringView("graduation-audios")) {
+            drawGraduationAudios(root, Property);
+        }
+    }
+
+    if (const auto Pagination = root.value("Pagination").toObject(); !Pagination.isEmpty()) {
+        drawPagination(Pagination);
+    }
 }
 
 void PreviewWidget::drawIntroPage(const QJsonObject &node)

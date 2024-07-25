@@ -20,6 +20,8 @@ public:
 
     int pageCount() const;
 
+    void save(int pgNum, const QString &path);
+
     QImage generateBarcode(const QString &text, int width, int height,
                            QColor foreground = Qt::black,
                            QColor background = Qt::white);
@@ -32,6 +34,7 @@ protected:
 
 protected:
     virtual bool parseProperty(const QJsonObject &obj);
+    virtual void renderToImage(int pgNum);
 
 private:
     void drawIntroPage(const QJsonObject &node);

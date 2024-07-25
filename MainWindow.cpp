@@ -21,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent)
     , m_previewBtn(new QPushButton)
     , m_nextBtn(new QPushButton)
     , m_previousBtn(new QPushButton)
+    , m_saveBtn(new QPushButton)
     , m_slider(new QSlider(Qt::Orientation::Horizontal))
     , m_dataSelLabel(new QLabel)
     , m_outpathSelLabel(new QLabel)
@@ -60,10 +61,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_nextBtn->setText("Next >>");
     vb->addWidget(m_nextBtn, 0, Qt::AlignLeft);
-    vb->addStretch();
 
     m_previousBtn->setText("Previous <<");
     vb->addWidget(m_previousBtn, 0, Qt::AlignLeft);
+    vb->addStretch();
+
+    m_saveBtn->setText("Save images");
+    vb->addWidget(m_saveBtn, 0, Qt::AlignLeft);
     vb->addStretch();
 
     QHBoxLayout *hb = new QHBoxLayout;
@@ -158,6 +162,16 @@ MainWindow::MainWindow(QWidget *parent)
             m_previewWidget->drawPage(value);
         }
         m_infoLabel->setText(QLatin1StringView("Page at ") + QString::number(value));
+    });
+
+    connect(m_saveBtn, &QPushButton::clicked,
+            this, [=]() {
+        if (m_previewWidget->load(m_datafile, m_outpath)) {
+            for (int i=0; i<m_previewWidget->pageCount(); ++i) {
+                m_infoLabel->setText(QLatin1StringView("Render page ") + QString::number(i));
+                m_previewWidget->save(i, m_outpath + "/out");
+            }
+        }
     });
 
 }
