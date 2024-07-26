@@ -1093,6 +1093,99 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                     }
                 }
             }
+            if (const auto Template = Body.value("Template").toObject(); !Template.isEmpty()) {
+
+                const int Width         = Template.value("Width").toDouble();
+                const int Height        = Template.value("Height").toDouble();
+                const int XCoordinate   = Template.value("XCoordinate").toDouble();
+                const int YCoordinate   = Template.value("YCoordinate").toDouble();
+                const auto Type         = Template.value("Type").toString();
+                const auto SubType      = Template.value("SubType").toString();
+
+                if (Type == QLatin1StringView("VV")) {
+                    int rotation = 5;
+                    int yoffset = 0;
+                    if (SubType == QLatin1StringView("VV-1")) {
+                        //(1200, 800), (560,2200)
+                        if (QImage img; img.load(":/layout_vv_type_one_right.png")) {
+                            m_scenePainter->drawImage(1200 - xpos, 600 - ypos, img);
+                        }
+                        if (QImage img; img.load(":/layout_vv_type_one_left.png")) {
+                            m_scenePainter->drawImage(560 - xpos, 2000 - ypos, img);
+                        }
+                    }
+                    if (SubType == QLatin1StringView("VV-2")) {
+                        //(1200, 800), (560,2200)
+                        if (QImage img; img.load(":/layout_vv_type_two_right.png")) {
+                            m_scenePainter->drawImage(1250 - xpos, 750 - ypos, img);
+                        }
+                        if (QImage img; img.load(":/layout_vv_type_two_left.png")) {
+                            m_scenePainter->drawImage(500 - xpos, 2200 - ypos, img);
+                        }
+                    }
+
+                    if (const auto Images = Template.value("Images").toArray(); !Images.isEmpty()) {
+
+                        for (const auto &it : Images) {
+                            if (const auto image = it.toObject(); !image.isEmpty()) {
+                                if (QImage img; img.load(GET_FILE(image.value("URL").toString()))) {
+                                    rotation = -rotation;
+                                    const int w = qMin(Width, (int)image.value("Width").toDouble());
+                                    const int h = qMin(Height, (int)image.value("Height").toDouble());
+                                    const int xc = image.value("XCoordinate").toDouble();
+                                    const int yc = image.value("YCoordinate").toDouble();
+                                    img = img.scaled(w, h, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+                                    if (img.width() > w) {
+                                        img = img.scaledToWidth(Width, Qt::SmoothTransformation);
+                                    }
+                                    else if (img.height() > h) {
+                                        img = img.scaledToHeight(Height, Qt::SmoothTransformation);
+                                    }
+#if 0 \
+    // m_scenePainter->translate(img.width()/2, img.height()/2); \
+    // m_scenePainter->rotate(rotation); \
+    // m_scenePainter->translate(-img.width()/2, -img.height()/2); \
+    // m_scenePainter->drawImage(xc, yc + yoffset, img);
+
+                                    // //reset painter
+                                    // m_scenePainter->translate(img.width()/2, img.height()/2);
+                                    // m_scenePainter->rotate(-rotation);
+                                    // m_scenePainter->translate(-img.width()/2, -img.height()/2);
+#else
+                                    const int border = 20;
+                                    QPixmap pm(img.width() + border*2, img.height() + border*2);
+                                    pm.fill(Qt::GlobalColor::transparent);
+
+                                    QPainter p(&pm);
+                                    p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+
+                                    p.setPen(QColor("#f3f3f3"));
+                                    p.setBrush(QColor("#f3f3f3"));
+                                    p.drawRoundedRect(0, 0, pm.width(), pm.height(), 20, 20);
+
+                                    QPainterPath path;
+                                    // path.addRoundedRect(0, 0, pm.width(), pm.height(), 20, 20);
+                                    path.addRoundedRect(border, border, img.width(), img.height(), 20, 20);
+                                    p.setClipPath(path);
+                                    p.drawImage(QPoint(border, border), img);
+
+                                    m_scenePainter->translate(pm.width()/2, pm.height()/2);
+                                    m_scenePainter->rotate(rotation);
+                                    m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
+                                    m_scenePainter->drawPixmap(xc, yc + yoffset, pm);
+
+                                    //reset painter
+                                    m_scenePainter->translate(pm.width()/2, pm.height()/2);
+                                    m_scenePainter->rotate(-rotation);
+                                    m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
+#endif
+                                    yoffset += img.height() *3/5;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             if (const auto Content = Body.value("Content").toObject(); !Content.isEmpty()) {
                 auto font = m_scenePainter->font();
                 //TODO font size
@@ -1271,99 +1364,99 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                     }
                 }
             }
-            if (const auto Template = Body.value("Template").toObject(); !Template.isEmpty()) {
+//             if (const auto Template = Body.value("Template").toObject(); !Template.isEmpty()) {
 
-                const int Width         = Template.value("Width").toDouble();
-                const int Height        = Template.value("Height").toDouble();
-                const int XCoordinate   = Template.value("XCoordinate").toDouble();
-                const int YCoordinate   = Template.value("YCoordinate").toDouble();
-                const auto Type         = Template.value("Type").toString();
-                const auto SubType      = Template.value("SubType").toString();
+//                 const int Width         = Template.value("Width").toDouble();
+//                 const int Height        = Template.value("Height").toDouble();
+//                 const int XCoordinate   = Template.value("XCoordinate").toDouble();
+//                 const int YCoordinate   = Template.value("YCoordinate").toDouble();
+//                 const auto Type         = Template.value("Type").toString();
+//                 const auto SubType      = Template.value("SubType").toString();
 
-                if (Type == QLatin1StringView("VV")) {
-                    int rotation = 5;
-                    int yoffset = 0;
-                    if (SubType == QLatin1StringView("VV-1")) {
-                        //(1200, 800), (560,2200)
-                        if (QImage img; img.load(":/layout_vv_type_one_right.png")) {
-                            m_scenePainter->drawImage(1200 - xpos, 600 - ypos, img);
-                        }
-                        if (QImage img; img.load(":/layout_vv_type_one_left.png")) {
-                            m_scenePainter->drawImage(560 - xpos, 2000 - ypos, img);
-                        }
-                    }
-                    if (SubType == QLatin1StringView("VV-2")) {
-                        //(1200, 800), (560,2200)
-                        if (QImage img; img.load(":/layout_vv_type_two_right.png")) {
-                            m_scenePainter->drawImage(1250 - xpos, 750 - ypos, img);
-                        }
-                        if (QImage img; img.load(":/layout_vv_type_two_left.png")) {
-                            m_scenePainter->drawImage(500 - xpos, 2200 - ypos, img);
-                        }
-                    }
+//                 if (Type == QLatin1StringView("VV")) {
+//                     int rotation = 5;
+//                     int yoffset = 0;
+//                     if (SubType == QLatin1StringView("VV-1")) {
+//                         //(1200, 800), (560,2200)
+//                         if (QImage img; img.load(":/layout_vv_type_one_right.png")) {
+//                             m_scenePainter->drawImage(1200 - xpos, 600 - ypos, img);
+//                         }
+//                         if (QImage img; img.load(":/layout_vv_type_one_left.png")) {
+//                             m_scenePainter->drawImage(560 - xpos, 2000 - ypos, img);
+//                         }
+//                     }
+//                     if (SubType == QLatin1StringView("VV-2")) {
+//                         //(1200, 800), (560,2200)
+//                         if (QImage img; img.load(":/layout_vv_type_two_right.png")) {
+//                             m_scenePainter->drawImage(1250 - xpos, 750 - ypos, img);
+//                         }
+//                         if (QImage img; img.load(":/layout_vv_type_two_left.png")) {
+//                             m_scenePainter->drawImage(500 - xpos, 2200 - ypos, img);
+//                         }
+//                     }
 
-                    if (const auto Images = Template.value("Images").toArray(); !Images.isEmpty()) {
+//                     if (const auto Images = Template.value("Images").toArray(); !Images.isEmpty()) {
 
-                        for (const auto &it : Images) {
-                            if (const auto image = it.toObject(); !image.isEmpty()) {
-                                if (QImage img; img.load(GET_FILE(image.value("URL").toString()))) {
-                                    rotation = -rotation;
-                                    const int w = qMin(Width, (int)image.value("Width").toDouble());
-                                    const int h = qMin(Height, (int)image.value("Height").toDouble());
-                                    const int xc = image.value("XCoordinate").toDouble();
-                                    const int yc = image.value("YCoordinate").toDouble();
-                                    img = img.scaled(w, h, Qt::KeepAspectRatio, Qt::SmoothTransformation);
-                                    if (img.width() > w) {
-                                        img = img.scaledToWidth(Width, Qt::SmoothTransformation);
-                                    }
-                                    else if (img.height() > h) {
-                                        img = img.scaledToHeight(Height, Qt::SmoothTransformation);
-                                    }
-#if 0
-                                    // m_scenePainter->translate(img.width()/2, img.height()/2);
-                                    // m_scenePainter->rotate(rotation);
-                                    // m_scenePainter->translate(-img.width()/2, -img.height()/2);
-                                    // m_scenePainter->drawImage(xc, yc + yoffset, img);
+//                         for (const auto &it : Images) {
+//                             if (const auto image = it.toObject(); !image.isEmpty()) {
+//                                 if (QImage img; img.load(GET_FILE(image.value("URL").toString()))) {
+//                                     rotation = -rotation;
+//                                     const int w = qMin(Width, (int)image.value("Width").toDouble());
+//                                     const int h = qMin(Height, (int)image.value("Height").toDouble());
+//                                     const int xc = image.value("XCoordinate").toDouble();
+//                                     const int yc = image.value("YCoordinate").toDouble();
+//                                     img = img.scaled(w, h, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+//                                     if (img.width() > w) {
+//                                         img = img.scaledToWidth(Width, Qt::SmoothTransformation);
+//                                     }
+//                                     else if (img.height() > h) {
+//                                         img = img.scaledToHeight(Height, Qt::SmoothTransformation);
+//                                     }
+// #if 0
+//                                     // m_scenePainter->translate(img.width()/2, img.height()/2);
+//                                     // m_scenePainter->rotate(rotation);
+//                                     // m_scenePainter->translate(-img.width()/2, -img.height()/2);
+//                                     // m_scenePainter->drawImage(xc, yc + yoffset, img);
 
-                                    // //reset painter
-                                    // m_scenePainter->translate(img.width()/2, img.height()/2);
-                                    // m_scenePainter->rotate(-rotation);
-                                    // m_scenePainter->translate(-img.width()/2, -img.height()/2);
-#else
-                                    const int border = 20;
-                                    QPixmap pm(img.width() + border*2, img.height() + border*2);
-                                    pm.fill(Qt::GlobalColor::transparent);
+//                                     // //reset painter
+//                                     // m_scenePainter->translate(img.width()/2, img.height()/2);
+//                                     // m_scenePainter->rotate(-rotation);
+//                                     // m_scenePainter->translate(-img.width()/2, -img.height()/2);
+// #else
+//                                     const int border = 20;
+//                                     QPixmap pm(img.width() + border*2, img.height() + border*2);
+//                                     pm.fill(Qt::GlobalColor::transparent);
 
-                                    QPainter p(&pm);
-                                    p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+//                                     QPainter p(&pm);
+//                                     p.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 
-                                    p.setPen(QColor("#f3f3f3"));
-                                    p.setBrush(QColor("#f3f3f3"));
-                                    p.drawRoundedRect(0, 0, pm.width(), pm.height(), 20, 20);
+//                                     p.setPen(QColor("#f3f3f3"));
+//                                     p.setBrush(QColor("#f3f3f3"));
+//                                     p.drawRoundedRect(0, 0, pm.width(), pm.height(), 20, 20);
 
-                                    QPainterPath path;
-                                    // path.addRoundedRect(0, 0, pm.width(), pm.height(), 20, 20);
-                                    path.addRoundedRect(border, border, img.width(), img.height(), 20, 20);
-                                    p.setClipPath(path);
-                                    p.drawImage(QPoint(border, border), img);
+//                                     QPainterPath path;
+//                                     // path.addRoundedRect(0, 0, pm.width(), pm.height(), 20, 20);
+//                                     path.addRoundedRect(border, border, img.width(), img.height(), 20, 20);
+//                                     p.setClipPath(path);
+//                                     p.drawImage(QPoint(border, border), img);
 
-                                    m_scenePainter->translate(pm.width()/2, pm.height()/2);
-                                    m_scenePainter->rotate(rotation);
-                                    m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
-                                    m_scenePainter->drawPixmap(xc, yc + yoffset, pm);
+//                                     m_scenePainter->translate(pm.width()/2, pm.height()/2);
+//                                     m_scenePainter->rotate(rotation);
+//                                     m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
+//                                     m_scenePainter->drawPixmap(xc, yc + yoffset, pm);
 
-                                    //reset painter
-                                    m_scenePainter->translate(pm.width()/2, pm.height()/2);
-                                    m_scenePainter->rotate(-rotation);
-                                    m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
-#endif
-                                    yoffset += img.height() *3/5;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+//                                     //reset painter
+//                                     m_scenePainter->translate(pm.width()/2, pm.height()/2);
+//                                     m_scenePainter->rotate(-rotation);
+//                                     m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
+// #endif
+//                                     yoffset += img.height() *3/5;
+//                                 }
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
 
 
 
