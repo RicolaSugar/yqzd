@@ -1117,7 +1117,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                     else if (SubType == QLatin1StringView("VV-2")) {
                         //(1200, 800), (560,2200)
                         if (QImage img; img.load(":/layout_vv_type_two_right.png")) {
-                            m_scenePainter->drawImage(1250 - xpos, 750 - ypos, img);
+                            m_scenePainter->drawImage(1200 - xpos, 850 - ypos, img);
                         }
                         if (QImage img; img.load(":/layout_vv_type_two_left.png")) {
                             m_scenePainter->drawImage(500 - xpos, 2200 - ypos, img);
@@ -1136,6 +1136,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                     if (const auto Images = Template.value("Images").toArray(); !Images.isEmpty()) {
                         for (const auto &it : Images) {
                             if (const auto image = it.toObject(); !image.isEmpty()) {
+                                int Rotation = image.value("Rotation").toInt();
                                 if (QImage img; img.load(GET_FILE(image.value("URL").toString()))) {
                                     rotation = -rotation;
                                     const int w = qMin(Width, (int)image.value("Width").toDouble());
@@ -1149,17 +1150,6 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                                     else if (img.height() > h) {
                                         img = img.scaledToHeight(Height, Qt::SmoothTransformation);
                                     }
-#if 0 \
-    // m_scenePainter->translate(img.width()/2, img.height()/2); \
-    // m_scenePainter->rotate(rotation); \
-    // m_scenePainter->translate(-img.width()/2, -img.height()/2); \
-    // m_scenePainter->drawImage(xc, yc + yoffset, img);
-
-                                    // //reset painter
-                                    // m_scenePainter->translate(img.width()/2, img.height()/2);
-                                    // m_scenePainter->rotate(-rotation);
-                                    // m_scenePainter->translate(-img.width()/2, -img.height()/2);
-#else
                                     const int border = 20;
                                     QPixmap pm(img.width() + border*2, img.height() + border*2);
                                     pm.fill(Qt::GlobalColor::transparent);
@@ -1172,22 +1162,42 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                                     p.drawRoundedRect(0, 0, pm.width(), pm.height(), 20, 20);
 
                                     QPainterPath path;
-                                    // path.addRoundedRect(0, 0, pm.width(), pm.height(), 20, 20);
                                     path.addRoundedRect(border, border, img.width(), img.height(), 20, 20);
                                     p.setClipPath(path);
                                     p.drawImage(QPoint(border, border), img);
 
-                                    m_scenePainter->translate(pm.width()/2, pm.height()/2);
-                                    m_scenePainter->rotate(rotation);
-                                    m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
-                                    m_scenePainter->drawPixmap(xc, yc + yoffset, pm);
+                                    //FIXME buggy, but display imgs atm
+                                    if (Rotation != 0) {
+                                        QPixmap pp(pm.height(), pm.width());
+                                        pp.fill(Qt::GlobalColor::transparent);
 
-                                    //reset painter
-                                    m_scenePainter->translate(pm.width()/2, pm.height()/2);
-                                    m_scenePainter->rotate(-rotation);
-                                    m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
-#endif
-                                    yoffset += img.height() *3/5;
+                                        QPainter pt(&pp);
+                                        pt.translate(pp.width()/2, pp.height()/2);
+                                        pt.rotate(Rotation);
+                                        pt.drawPixmap(-pp.height()/2, -pp.width()/2, pm);
+
+                                        m_scenePainter->translate(pp.width()/2, pp.height()/2);
+                                        m_scenePainter->rotate(rotation);
+                                        m_scenePainter->translate(-pp.width()/2, -pp.height()/2);
+                                        m_scenePainter->drawPixmap(xc, yc + yoffset, pp);
+
+                                        //reset painter
+                                        m_scenePainter->translate(pp.width()/2, pp.height()/2);
+                                        m_scenePainter->rotate(-rotation);
+                                        m_scenePainter->translate(-pp.width()/2, -pp.height()/2);
+                                        yoffset += img.height() *3/5;
+                                    } else {
+                                        m_scenePainter->translate(pm.width()/2, pm.height()/2);
+                                        m_scenePainter->rotate(rotation);
+                                        m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
+                                        m_scenePainter->drawPixmap(xc, yc + yoffset, pm);
+
+                                        //reset painter
+                                        m_scenePainter->translate(pm.width()/2, pm.height()/2);
+                                        m_scenePainter->rotate(-rotation);
+                                        m_scenePainter->translate(-pm.width()/2, -pm.height()/2);
+                                        yoffset += img.height() *3/5;
+                                    }
                                 }
                             }
                         }
