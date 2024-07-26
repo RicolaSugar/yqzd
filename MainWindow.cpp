@@ -169,7 +169,9 @@ MainWindow::MainWindow(QWidget *parent)
         if (m_previewWidget->load(m_datafile, m_outpath)) {
             for (int i=0; i<m_previewWidget->pageCount(); ++i) {
                 m_infoLabel->setText(QLatin1StringView("Render page ") + QString::number(i));
+                qApp->processEvents();
                 m_previewWidget->save(i, m_outpath + "/out");
+                qApp->processEvents();
             }
         }
     });
