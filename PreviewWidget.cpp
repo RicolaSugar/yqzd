@@ -305,6 +305,9 @@ void PreviewWidget::renderToImage(int pgNum)
         else if (Type == QLatin1StringView("graduation-audios")) {
             drawGraduationAudios(root, Property);
         }
+        else if (Type == QLatin1StringView("e-final")) {
+            drawEFinalPage(root, Property);
+        }
     }
 
     if (const auto Pagination = root.value("Pagination").toObject(); !Pagination.isEmpty()) {
@@ -1814,6 +1817,131 @@ void PreviewWidget::drawGraduationAudios(const QJsonObject &node, const QJsonObj
             }
         }
     }
+}
+
+void PreviewWidget::drawEFinalPage(const QJsonObject &node, const QJsonObject &property)
+{
+    const auto Elements = node.value("Elements").toArray();
+    if (Elements.isEmpty()) {
+        return;
+    }
+    {
+        //(640,300)
+        auto font = m_scenePainter->font();
+        font.setPixelSize(88);
+        m_scenePainter->setFont(font);
+
+        m_scenePainter->setPen(QColor("#fbd32e"));
+        m_scenePainter->setBrush(QColor("#fbd32e"));
+
+        m_scenePainter->drawText(640, 300, "期末发展评估");
+    }
+
+    // auto font = m_scenePainter->font();
+    // font.setPixelSize(88);
+    // QFontMetrics starFm(font);
+    // const int starW = starFm.horizontalAdvance("⭐⭐⭐");
+
+    auto font = m_scenePainter->font();
+    font.setPixelSize(48);
+    m_scenePainter->setFont(font);
+    QFontMetrics fm(font);
+
+    const int starSize = 48;
+    const int starW = starSize * 3;
+    const int space = 292; //from json file
+    const int xpos  = 300;
+    //width of text area
+    const int textW = m_pageSize.PageWidth - xpos*2 - starW;
+    int ypos        = 700;
+
+    for (const auto &ele : Elements) {
+        const auto obj = ele.toObject();
+        if (obj.isEmpty()) {
+            continue;
+        }
+        if (const auto Content = obj.value("Content").toArray(); !Content.isEmpty()) {
+            if(const auto ct = Content.first().toObject(); !ct.empty()) { //only one item in array as json data
+                const auto L1 = ct.value("L1").toString();
+                const auto L2 = ct.value("L2").toString();
+                const auto L3 = ct.value("L3").toString();
+                const auto Stars = ct.value("Stars").toInt();
+
+                int x = xpos;
+                int y = ypos + fm.ascent();
+
+                m_scenePainter->setPen(QColor("#f9d32f"));
+                m_scenePainter->setBrush(QColor("#f9d32f"));
+
+                m_scenePainter->drawText(x, y, L1);
+
+                x += fm.horizontalAdvance(L1) + 60;
+                m_scenePainter->drawText(x, y, L2);
+
+                m_scenePainter->setPen(Qt::white);
+                m_scenePainter->setBrush(Qt::white);
+
+                //average width per word
+                int wp = fm.horizontalAdvance(L3) / L3.size();
+                int line = qCeil((qreal)fm.horizontalAdvance(L3) / (qreal)textW);
+
+                y += 10;
+                m_scenePainter->drawText(xpos,
+                                         y,
+                                         textW,
+                                         line * fm.height(),
+                                         Qt::AlignLeft | Qt::AlignTop | Qt::TextWordWrap ,
+                                         L3);
+
+                y += line * fm.height() + 20;
+
+                if (ele != Elements.last()) {
+                    m_scenePainter->setPen(QPen(Qt::GlobalColor::white, Qt::DashLine));
+                    m_scenePainter->drawLine(xpos,
+                                             y,
+                                             xpos + textW + starW,
+                                             y);
+                }
+                x = xpos + textW + 10;
+                {
+                    QImage img;
+                    img.load(":/star-full.webp");
+                    img = img.scaled(starSize, starSize, Qt::KeepAspectRatio);
+                    for (int i=0; i<Stars; ++i) {
+                          m_scenePainter->drawImage(x,
+                                                  ypos + (y + 20 - ypos - starSize)/2,
+                                                  img);
+                        x += starSize;
+                    }
+                }
+                {
+                    QImage img;
+                    img.load(":/star-outline.webp");
+                    img = img.scaled(starSize, starSize, Qt::KeepAspectRatio);
+                    for (int i =0; i<(3-Stars); ++i) {
+                         m_scenePainter->drawImage(x,
+                                                  ypos + (y + 20 - ypos - starSize)/2,
+                                                  img);
+                        x += starSize;
+                    }
+                }
+                ypos = y + 20;
+            }
+        }
+
+        const auto Creator = obj.value("Creator").toString();
+        const auto Time = obj.value("Time").toString();
+
+        if (!Creator.isEmpty() && ! Time.isEmpty()) {
+            const auto text = QString("%1 评估    %2").arg(Creator).arg(Time);
+            const auto tw = fm.horizontalAdvance(text);
+            m_scenePainter->drawText(m_pageSize.PageWidth - space - tw,
+                                     ypos + 60,
+                                     text);
+        }
+
+    }
+
 }
 
 void PreviewWidget::drawPagination(const QJsonObject &node)

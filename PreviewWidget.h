@@ -49,6 +49,7 @@ private:
     void drawPhysicalExaminationPage(const QJsonObject &node, const QJsonObject &property);
     void drawEWishPage(const QJsonObject &node, const QJsonObject &property);
     void drawGraduationAudios(const QJsonObject &node, const QJsonObject &property);
+    void drawEFinalPage(const QJsonObject &node, const QJsonObject &property);
 
 
     void drawPagination(const QJsonObject &node);
