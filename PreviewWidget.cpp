@@ -1114,7 +1114,7 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                             m_scenePainter->drawImage(560 - xpos, 2000 - ypos, img);
                         }
                     }
-                    if (SubType == QLatin1StringView("VV-2")) {
+                    else if (SubType == QLatin1StringView("VV-2")) {
                         //(1200, 800), (560,2200)
                         if (QImage img; img.load(":/layout_vv_type_two_right.png")) {
                             m_scenePainter->drawImage(1250 - xpos, 750 - ypos, img);
@@ -1123,9 +1123,17 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                             m_scenePainter->drawImage(500 - xpos, 2200 - ypos, img);
                         }
                     }
+                    else if (SubType == QLatin1StringView("VV-3")) {
+                        //(1200, 800), (560,2200)
+                        if (QImage img; img.load(":/layout_vv_type_three_right.png")) {
+                            m_scenePainter->drawImage(1250 - xpos, 700 - ypos, img);
+                        }
+                        if (QImage img; img.load(":/layout_vv_type_three_left.png")) {
+                            m_scenePainter->drawImage(500 - xpos, 2000 - ypos, img);
+                        }
+                    }
 
                     if (const auto Images = Template.value("Images").toArray(); !Images.isEmpty()) {
-
                         for (const auto &it : Images) {
                             if (const auto image = it.toObject(); !image.isEmpty()) {
                                 if (QImage img; img.load(GET_FILE(image.value("URL").toString()))) {
@@ -1257,7 +1265,9 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                                         p.translate(pm.width()/2, pm.height()/2);
                                         p.rotate(Rotation);
                                         p.drawImage(-pm.height()/2, -pm.width()/2, img);
-                                        m_scenePainter->drawPixmap(XCoordinate, YCoordinate, pm);
+                                        m_scenePainter->drawPixmap(XCoordinate - (qMax(img.width(), img.height()) - qMin(img.width(), img.height())),
+                                                                   YCoordinate,
+                                                                   pm);
                                     }
                                     else {
                                         img = img.scaled(Width, Height, Qt::KeepAspectRatio, Qt::SmoothTransformation);

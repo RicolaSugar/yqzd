@@ -13,5 +13,7 @@
         <file>layout_vv_type_two_right.png</file>
         <file>star-full.webp</file>
         <file>star-outline.webp</file>
+        <file>layout_vv_type_three_left.png</file>
+        <file>layout_vv_type_three_right.png</file>
     </qresource>
 </RCC>

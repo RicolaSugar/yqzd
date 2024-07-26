@@ -1,2 +1,3 @@
 FIX LIST:
-大班上 pg 112开始后续几页有问题
+大班上 e-radar support
+小班下 pg17, pg34
