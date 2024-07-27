@@ -1262,7 +1262,8 @@ void PreviewWidget::drawHybridSubject(const QJsonObject &node, const QJsonObject
                             //          <<", Width "<<Width<<", XCoordinate "<<XCoordinate<<", YCoordinate "<<YCoordinate
                             //          <<", Rotation "<<Rotation;
 
-                            if (Type == QLatin1StringView("image")) {
+                            //NOTE 在此处有些节点type是video，但是在app里面只简单提供了图片，并没有提供二维码，此处跟随app的形式
+                            if (Type == QLatin1StringView("image") || Type == QLatin1StringView("video")) {
                                 if (QImage img; img.load(GET_FILE(obj.value("URL").toString()))) {
                                     if (qAbs(Rotation) != 0) {
                                         img = img.scaledToHeight(Width, Qt::SmoothTransformation);
